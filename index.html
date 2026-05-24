@@ -31,6 +31,7 @@ canvas { display:block; }
 .hp-box { width:220px; height:22px; background:#1a0000; border:2px solid #500; border-radius:4px; overflow:hidden; }
 #bar-hp { height:100%; background:linear-gradient(90deg,#f00,#f55); width:100%; transition:width 0.1s; }
 
+/* Streamer HUD - sağ üst köşede küçük */
 #streamer-hud { position:absolute; top:15px; right:65px; display:none; align-items:center; gap:10px; z-index:60; pointer-events:none; animation:slideUp 0.5s ease; }
 #hud-avatar { width:48px; height:48px; border-radius:50%; border:2px solid #0f0; object-fit:cover; box-shadow:0 0 15px rgba(0,255,0,0.5); }
 #hud-name { font-size:13px; color:#0f0; font-weight:bold; text-shadow:0 0 10px #0f0; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -92,17 +93,12 @@ button.big-btn:hover { background:#fff; transform:scale(1.08); }
 .login-sub { color:#3a6a3a; font-size:14px; margin-bottom:28px; letter-spacing:2px; }
 .login-hint { color:#1a3a1a; font-size:12px; margin-top:18px; }
 
-/* Chat ID büyük input */
-#chatid-input {
-  display:block; width:100%; padding:16px 22px; font-size:26px; font-weight:bold;
-  background:#030b03; border:2px solid #1a4a1a; color:#ffd700; border-radius:8px;
-  text-align:center; font-family:'Courier New',monospace; outline:none; letter-spacing:4px;
-  transition:border-color 0.2s, box-shadow 0.2s; margin-bottom:10px;
-}
-#chatid-input:focus { border-color:#ffd700; box-shadow:0 0 25px rgba(255,215,0,0.18); }
-#chatid-input::placeholder { color:#1a2a1a; letter-spacing:1px; font-size:16px; font-weight:normal; }
+/* Profil önizleme - login */
+#login-preview-wrap { display:none; align-items:center; gap:14px; margin-bottom:18px; justify-content:center; padding:10px 18px; background:rgba(0,255,0,0.04); border:1px solid #1a4a1a; border-radius:10px; }
+#login-avatar-preview { width:52px; height:52px; border-radius:50%; border:2px solid #0f0; object-fit:cover; box-shadow:0 0 15px rgba(0,255,0,0.4); }
+#login-found-name { color:#0f0; font-size:17px; font-weight:bold; text-shadow:0 0 10px #0f0; }
+#login-found-id { color:#3a7a3a; font-size:11px; margin-top:2px; }
 
-/* Streamer adı küçük input */
 #streamer-input {
   display:block; width:100%; padding:14px 22px; font-size:20px;
   background:#050505; border:2px solid #1a4a1a; color:#0f0; border-radius:8px;
@@ -120,15 +116,6 @@ button.big-btn:hover { background:#fff; transform:scale(1.08); }
 #btn-login:hover:not(:disabled) { background:#fff; transform:scale(1.02); }
 #btn-login:disabled { opacity:0.4; cursor:not-allowed; }
 #login-status { color:#555; font-size:13px; margin-top:12px; min-height:18px; }
-
-/* Rehber kutusu */
-.chatid-guide {
-  font-size:11.5px; color:#2a5a2a; margin-bottom:22px;
-  background:rgba(0,255,0,0.03); border:1px solid #0f2a0f;
-  border-radius:8px; padding:12px 15px; text-align:left; line-height:1.8;
-}
-.chatid-guide b { color:#0c8a0c; }
-.chatid-guide code { color:#ffd700; font-size:10px; background:#080808; padding:2px 5px; border-radius:3px; word-break:break-all; display:block; margin-top:5px; }
 </style>
 </head>
 <body>
@@ -146,6 +133,7 @@ button.big-btn:hover { background:#fff; transform:scale(1.08); }
     <div id="kills-row" class="stat-row" style="color:#f80;font-size:14px;display:none;">☠️ <span id="txt-kills">0</span></div>
 </div>
 
+<!-- HUD: sadece sağ üst, küçük gösterge -->
 <div id="streamer-hud">
     <img id="hud-avatar" src="" alt="">
     <span id="hud-name"></span>
@@ -156,7 +144,8 @@ button.big-btn:hover { background:#fff; transform:scale(1.08); }
     <div class="settings-box">
         <h2 style="margin-bottom:28px;color:#0f0;font-size:22px;">⚙️ AYARLAR</h2>
         <div class="settings-row"><span>🔊 Ses Seviyesi</span><input type="range" id="vol-slider" min="0" max="1" step="0.1" value="0.5"></div>
-        <div class="settings-row"><span>🔭 Kamera Uzaklığı</span><input type="range" id="zoom-slider" min="0.5" max="1.5" step="0.1" value="1"></div>
+        <div class="settings-row"><span>🔭 Kamera Uzaklığı</span><input type="range" id="zoom-slider" min="0.8" max="2.5" step="0.1" value="1.6"></div>
+        <div class="settings-row"><span>🧍 Karakter Boyutu</span><input type="range" id="char-slider" min="0.5" max="2.5" step="0.1" value="1.0"><span id="char-val" style="color:#0f0;font-size:13px;min-width:30px">1.0×</span></div>
         <div class="settings-row"><span style="color:gold;">📁 oyuncode/ Ses Dosyaları</span><input type="checkbox" id="custom-audio-chk" checked></div>
         <div style="font-size:11px;color:#444;margin:-8px 0 18px;text-align:left;">&nbsp;ates.mp3 · xp.mp3 · seviye_atlama.mp3 · canavar_yok_etme.mp3</div>
         <button class="close-btn" onclick="closeSettings()">KAPAT & DEVAM</button>
@@ -195,24 +184,33 @@ button.big-btn:hover { background:#fff; transform:scale(1.08); }
 <div id="start-menu" class="overlay-screen">
     <div id="left-fx"></div><div id="right-fx"></div>
     <h1 class="vampire-title">ATLASSYA<br>SURVIVAL</h1>
-    <p style="color:#555;margin-bottom:8px;font-size:13px;letter-spacing:2px;">v4.1 — ENHANCED EDITION</p>
+    <p style="color:#555;margin-bottom:8px;font-size:13px;letter-spacing:2px;">v4.2 — ENHANCED EDITION</p>
     <p id="menu-streamer" style="color:#0f0;font-size:17px;margin-bottom:30px;text-shadow:0 0 10px #0f0;"></p>
     <button class="big-btn" onclick="init()">▶ OYUNU BAŞLAT</button>
     <p style="color:#333;margin-top:22px;font-size:12px;letter-spacing:1px;">WASD: Hareket &nbsp;|&nbsp; SPACE: Dash &nbsp;|&nbsp; Q: Bot Dalgası &nbsp;|&nbsp; ESC: Duraklat</p>
+    <p style="color:#2a4a2a;margin-top:8px;font-size:11px;">Chat: 1-10 yazarak düşman çağır!</p>
 </div>
 
 <!-- ── LOGIN SCREEN ── -->
 <div id="login-screen">
   <div class="login-box">
-    <img id="login-avatar-preview" src="" alt="">
-    <div id="login-found-name"></div>
     <div class="login-logo">🎮 KICK SURVIVAL</div>
     <div class="login-sub">KICK YAYINCI ADI GİR</div>
+
+    <!-- Bulunan kanal önizlemesi -->
+    <div id="login-preview-wrap">
+      <img id="login-avatar-preview" src="" alt="">
+      <div>
+        <div id="login-found-name"></div>
+        <div id="login-found-id"></div>
+      </div>
+    </div>
+
     <input type="text" id="streamer-input" placeholder="kullanıcı adı..." autocomplete="off"
-           onkeydown="if(event.key==='Enter')doLogin()">
+           oninput="onStreamerInput()" onkeydown="if(event.key==='Enter')doLogin()">
     <button id="btn-login" onclick="doLogin()">BAĞLAN &amp; BAŞLAT</button>
     <div id="login-status"></div>
-    <div class="login-hint">Kick chat'e otomatik bağlanır</div>
+    <div class="login-hint">Kick chat'e otomatik bağlanır &nbsp;·&nbsp; 1–10 yazarak düşman çağır</div>
   </div>
 </div>
 
@@ -222,8 +220,14 @@ button.big-btn:hover { background:#fff; transform:scale(1.08); }
 <script>
 const CVS = document.getElementById('cvs');
 const CTX = CVS.getContext('2d');
-const W = window.innerWidth, H = window.innerHeight;
-CVS.width = W; CVS.height = H;
+// screen.width/height tarayıcı zoom'undan BAĞIMSIZ — Ctrl+/- hiç etkilemez
+const W = screen.width  || window.innerWidth;
+const H = screen.height || window.innerHeight;
+CVS.width  = W;
+CVS.height = H;
+// CSS ile her zoom seviyesinde tam ekran kapla
+CVS.style.width  = '100vw';
+CVS.style.height = '100vh';
 window.oncontextmenu = e => { e.preventDefault(); return false; };
 
 const MAP_W = 4500, MAP_H = 4500;
@@ -236,21 +240,27 @@ let chatRoomId   = '28632539';
 const imgPlayer = new Image(); imgPlayer.src = 'atlas.png';
 const imgMelee  = new Image(); imgMelee.src  = 'oyuncode/dusman.png';
 const imgRanged = new Image(); imgRanged.src = 'oyuncode/uzak.png';
+// Avatar: hem HUD hem karakter üzerinde kullanılır
 const imgAvatar = new Image();
+// Avatar çizimi için offscreen canvas (clip + çizim)
+const avatarCanvas = document.createElement('canvas');
+const avatarCtx = avatarCanvas.getContext('2d');
 
 let gameActive = false, isPaused = false;
-let audioCtx = null, masterVol = 0.5, zoomLevel = 1.0, useCustomAudio = true;
+let audioCtx = null, masterVol = 0.5, zoomLevel = 1.6, charScale = 1.0, useCustomAudio = true;
 let keys = {}, frame = 0, timeSec = 0, timerInt = null;
 let eidCounter = 0;
 
 let qWaveCd = 0;
 const Q_WAVE_MAX = 600;
 
+// ── Oyuncu varsayılan değerleri ─────────────────────────
+// r: 28 (daha büyük karakter)
 const PLAYER_DEFAULT = {
-    x:MAP_W/2, y:MAP_H/2, hp:100, maxHp:100, spd:7, r:20,
+    x:MAP_W/2, y:MAP_H/2, hp:100, maxHp:100, spd:7, r:28,
     lvl:1, xp:0, nextXp:5, xpMult:1,
     dmg:25, cd:0, maxCd:20, bulletSpeed:11, multi:1,
-    garlic:0, garlicDmg:8, orb:0, orbDmg:3, orbSpd:0.08, orbRange:100,
+    garlic:0, garlicDmg:8, orb:0, orbDmg:3, orbSpd:0.08, orbRange:110,
     mag:150, shield:0, maxShield:5,
     dashCd:0, maxDashCd:180, isDashing:false, dashTime:0, dashVx:0, dashVy:0,
     revives:0, invul:0,
@@ -264,22 +274,91 @@ let player = Object.assign({}, PLAYER_DEFAULT);
 let enemies=[], bullets=[], eBullets=[], props=[], trees=[], rocks=[], items=[], floats=[], parts=[], orbAng=0;
 let terrainZones=[], roads=[], campfires=[], landmarks=[];
 
-// ─── LOGIN ─────────────────────────────────────────────
-function doLogin() {
+// ── LOGIN & KİCK API ───────────────────────────────────
+
+// Yazarken önizleme güncelle (debounce)
+let previewTimeout = null;
+function onStreamerInput() {
+    clearTimeout(previewTimeout);
+    const inp = document.getElementById('streamer-input').value.trim();
+    if(!inp) { hidePreview(); return; }
+    previewTimeout = setTimeout(() => fetchChannelPreview(inp), 700);
+}
+
+async function fetchChannelPreview(username) {
+    try {
+        const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(username)}`);
+        if(!res.ok) { hidePreview(); return; }
+        const data = await res.json();
+        const pic  = data.user?.profile_pic || null;
+        const id   = data.chatroom?.id || null;
+        const name = data.user?.username || username;
+        if(pic && id) {
+            document.getElementById('login-preview-wrap').style.display = 'flex';
+            document.getElementById('login-avatar-preview').src = pic;
+            document.getElementById('login-found-name').innerText = '✅ ' + name;
+            document.getElementById('login-found-id').innerText   = 'Chat ID: ' + id;
+            document.getElementById('login-status').innerText     = '';
+        } else { hidePreview(); }
+    } catch(e) { hidePreview(); }
+}
+
+function hidePreview() {
+    document.getElementById('login-preview-wrap').style.display = 'none';
+}
+
+async function doLogin() {
     const inp = document.getElementById('streamer-input').value.trim();
     if(!inp) { document.getElementById('login-status').innerText = '⚠️ Bir kullanıcı adı gir!'; return; }
-    streamerName = inp;
-    document.getElementById('btn-login').disabled = true;
-    document.getElementById('btn-login').innerText = 'Başlatılıyor...';
-    document.getElementById('login-status').innerText = '✅ Bağlanıyor: ' + inp;
-    setTimeout(goToStartMenu, 600);
+    document.getElementById('btn-login').disabled  = true;
+    document.getElementById('btn-login').innerText = 'Aranıyor...';
+    document.getElementById('login-status').innerText = '🔍 Kanal bilgileri alınıyor...';
+
+    try {
+        const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(inp)}`);
+        if(res.ok) {
+            const data = await res.json();
+            const id  = data.chatroom?.id;
+            const pic = data.user?.profile_pic;
+            const name= data.user?.username || inp;
+            if(id)  chatRoomId   = String(id);
+            if(pic) streamerPic  = pic;
+            streamerName = name;
+            document.getElementById('login-status').innerText = '✅ Bulundu! Chat ID: ' + chatRoomId;
+        } else {
+            streamerName = inp;
+            document.getElementById('login-status').innerText = '⚠️ Kanal bulunamadı — varsayılan ID kullanılıyor';
+        }
+    } catch(e) {
+        streamerName = inp;
+        document.getElementById('login-status').innerText = '⚠️ API hatası — varsayılan kullanılıyor';
+    }
+
+    // Avatar yükle
+    imgAvatar.onload = () => bakeAvatar();
+    imgAvatar.onerror = () => {};
+    imgAvatar.src = streamerPic;
+
+    setTimeout(goToStartMenu, 800);
+}
+
+// Avatar'ı offscreen canvas'a "fotoğraf çerçeveli" şekilde pişir
+function bakeAvatar() {
+    const S = 128;
+    avatarCanvas.width = S; avatarCanvas.height = S;
+    avatarCtx.clearRect(0,0,S,S);
+    avatarCtx.save();
+    avatarCtx.beginPath();
+    avatarCtx.arc(S/2,S/2,S/2,0,Math.PI*2);
+    avatarCtx.clip();
+    avatarCtx.drawImage(imgAvatar,0,0,S,S);
+    avatarCtx.restore();
 }
 
 function goToStartMenu() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('start-menu').style.display   = 'flex';
     document.getElementById('menu-streamer').innerText = '📺  ' + streamerName + '  kanalı';
-    imgAvatar.src = streamerPic;
     document.getElementById('hud-avatar').src    = streamerPic;
     document.getElementById('hud-name').innerText = streamerName;
     createMenuParticles();
@@ -325,9 +404,11 @@ function closeSettings() { document.getElementById('settings-modal').style.displ
 
 if(localStorage.kickVol)   { masterVol=parseFloat(localStorage.kickVol); document.getElementById('vol-slider').value=masterVol; }
 if(localStorage.kickZoom)  { zoomLevel=parseFloat(localStorage.kickZoom); document.getElementById('zoom-slider').value=zoomLevel; }
+if(localStorage.kickChar)  { charScale=parseFloat(localStorage.kickChar); document.getElementById('char-slider').value=charScale; document.getElementById('char-val').innerText=charScale.toFixed(1)+'×'; }
 if(localStorage.kickAudio) { useCustomAudio=localStorage.kickAudio==='true'; document.getElementById('custom-audio-chk').checked=useCustomAudio; }
 document.getElementById('vol-slider').oninput=e=>{masterVol=parseFloat(e.target.value);localStorage.kickVol=masterVol;};
 document.getElementById('zoom-slider').oninput=e=>{zoomLevel=parseFloat(e.target.value);localStorage.kickZoom=zoomLevel;};
+document.getElementById('char-slider').oninput=e=>{charScale=parseFloat(e.target.value);document.getElementById('char-val').innerText=charScale.toFixed(1)+'×';localStorage.kickChar=charScale;};
 document.getElementById('custom-audio-chk').onchange=e=>{useCustomAudio=e.target.checked;localStorage.kickAudio=useCustomAudio;};
 
 // ─── AUDIO ─────────────────────────────────────────────
@@ -392,27 +473,26 @@ function init() {
     document.getElementById('q-hint').style.display='block';
     try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
     resetWorld();
-    if(typeof Pusher !== 'undefined') {
-        try {
-            const p = new Pusher(PUSHER_KEY, {cluster:'us2'});
-            const ch = p.subscribe('chatrooms.' + chatRoomId + '.v2');
-            document.getElementById('log-area').innerText = '✅ Kick Chat: ' + chatRoomId;
-            ch.bind('App\\Events\\ChatMessageEvent', d => {
-                let data = typeof d === 'string' ? JSON.parse(d) : d;
-                if(data.sender) handleChat(data.sender, data.content);
-            });
-        } catch(e) {
-            document.getElementById('log-area').innerText = '❌ Hata: ' + e.message;
-        }
-    } else {
-        document.getElementById('log-area').innerText = '❌ Pusher scripti yüklenemedi';
-    }
+    connectPusher();
     gameActive=true;
     loop();
     startTimer();
 }
 
-// Pusher dogrudan init() icinde
+function connectPusher() {
+    if(typeof Pusher === 'undefined') { document.getElementById('log-area').innerText='❌ Pusher yüklenemedi'; return; }
+    try {
+        const p  = new Pusher(PUSHER_KEY, {cluster:'us2'});
+        const ch = p.subscribe('chatrooms.' + chatRoomId + '.v2');
+        document.getElementById('log-area').innerText = '✅ Kick Chat: ' + streamerName + ' (ID:' + chatRoomId + ')';
+        ch.bind('App\\Events\\ChatMessageEvent', d => {
+            let data = typeof d === 'string' ? JSON.parse(d) : d;
+            if(data.sender) handleChat(data.sender, data.content);
+        });
+    } catch(e) {
+        document.getElementById('log-area').innerText = '❌ Hata: ' + e.message;
+    }
+}
 
 function startTimer() {
     if(timerInt) clearInterval(timerInt);
@@ -442,7 +522,7 @@ function resetWorld() {
     campfires=[];
     for(let i=0;i<20;i++) campfires.push({x:Math.random()*MAP_W,y:Math.random()*MAP_H,t:Math.random()*100});
     landmarks=[];
-    const lnames=['KALE','MAĞARA','KÖPRÜ','TAPINAK','KÜMBET','GÖLE','ÇARŞI'];
+    const lnames=['KALE','MAĞARA','KÖPRÜ','TAPINAK','KÜMBET','GÖLET','ÇARŞI'];
     for(let i=0;i<8;i++) landmarks.push({x:Math.random()*MAP_W,y:Math.random()*MAP_H,name:lnames[Math.floor(Math.random()*lnames.length)],r:80+Math.random()*60});
     for(let i=0;i<100;i++) props.push({x:Math.random()*MAP_W,y:Math.random()*MAP_H,hp:3,type:Math.random()<0.6?'barrel':'crate'});
     for(let i=0;i<500;i++){const h=Math.floor(Math.random()*3+1);trees.push({x:Math.random()*MAP_W,y:Math.random()*MAP_H,r:30+Math.random()*55,color:`rgb(${10+h*8},${55+Math.random()*30},${10+h*5})`});}
@@ -452,17 +532,7 @@ function resetWorld() {
 function restartGame() {
     document.getElementById('game-over-screen').style.display='none';
     resetWorld();
-    if(typeof Pusher !== 'undefined') {
-        try {
-            const p = new Pusher(PUSHER_KEY, {cluster:'us2'});
-            const ch = p.subscribe('chatrooms.' + chatRoomId + '.v2');
-            document.getElementById('log-area').innerText = '✅ Kick Chat: ' + chatRoomId;
-            ch.bind('App\\Events\\ChatMessageEvent', d => {
-                let data = typeof d === 'string' ? JSON.parse(d) : d;
-                if(data.sender) handleChat(data.sender, data.content);
-            });
-        } catch(e) {}
-    }
+    connectPusher();
     gameActive=true; loop(); startTimer();
 }
 
@@ -719,39 +789,150 @@ function draw() {
         CTX.restore();
     });
 
+    // Düşman mermileri
     CTX.save();CTX.shadowBlur=10;CTX.shadowColor='#f55';CTX.fillStyle='#f55';
-    eBullets.forEach(b=>{const pos=relPos(b.x,b.y);if(Math.abs(pos.x)<VW&&Math.abs(pos.y)<VH){CTX.beginPath();CTX.arc(pos.x,pos.y,6,0,6.28);CTX.fill();}});CTX.restore();
+    eBullets.forEach(b=>{const pos=relPos(b.x,b.y);if(Math.abs(pos.x)<VW&&Math.abs(pos.y)<VH){CTX.beginPath();CTX.arc(pos.x,pos.y,7,0,6.28);CTX.fill();}});CTX.restore();
 
+    // ── DÜŞMANLAR (daha büyük, isimleri okunaklı) ──────────
     enemies.forEach(e=>{
         const pos=relPos(e.x,e.y);
         if(Math.abs(pos.x)>VW||Math.abs(pos.y)>VH) return;
+        const ER = e.r * charScale; // görsel yarıçap
         CTX.save();
         if(e.frozen>0){CTX.shadowBlur=20;CTX.shadowColor='#00ffff';}
         else if(e.slowed>0){CTX.shadowBlur=10;CTX.shadowColor='#0066ff';}
-        else if(e.boss){CTX.shadowBlur=25+Math.sin(frame*0.08)*10;CTX.shadowColor='#f00';}
-        const img=e.range?imgRanged:imgMelee; const sz=e.r*2;
-        try{if(img.complete&&img.naturalWidth>0){CTX.drawImage(img,pos.x-e.r,pos.y-e.r,sz,sz);}else{CTX.fillStyle=e.c;CTX.beginPath();CTX.arc(pos.x,pos.y,e.r,0,6.28);CTX.fill();}}catch(err){CTX.fillStyle=e.c;CTX.beginPath();CTX.arc(pos.x,pos.y,e.r,0,6.28);CTX.fill();}
-        if(e.frozen>0){CTX.globalAlpha=0.45;CTX.fillStyle='#00ffff';CTX.beginPath();CTX.arc(pos.x,pos.y,e.r,0,6.28);CTX.fill();}
-        if(e.boss){CTX.globalAlpha=1;CTX.strokeStyle='#ffd700';CTX.lineWidth=3;CTX.beginPath();CTX.arc(pos.x,pos.y,e.r+3,0,6.28);CTX.stroke();}
+        else if(e.boss){CTX.shadowBlur=30+Math.sin(frame*0.08)*12;CTX.shadowColor='#f00';}
+
+        const img=e.range?imgRanged:imgMelee;
+        try{
+            if(img.complete&&img.naturalWidth>0){CTX.drawImage(img,pos.x-ER,pos.y-ER,ER*2,ER*2);}
+            else{CTX.fillStyle=e.c;CTX.beginPath();CTX.arc(pos.x,pos.y,ER,0,6.28);CTX.fill();}
+        }catch(err){CTX.fillStyle=e.c;CTX.beginPath();CTX.arc(pos.x,pos.y,ER,0,6.28);CTX.fill();}
+
+        if(e.frozen>0){CTX.globalAlpha=0.45;CTX.fillStyle='#00ffff';CTX.beginPath();CTX.arc(pos.x,pos.y,ER,0,6.28);CTX.fill();}
+        if(e.boss){
+            CTX.globalAlpha=1;CTX.strokeStyle='#ffd700';CTX.lineWidth=4;
+            CTX.beginPath();CTX.arc(pos.x,pos.y,ER+4,0,6.28);CTX.stroke();
+        }
         CTX.restore();
-        CTX.fillStyle='#ddd';CTX.font='bold 11px monospace';CTX.textAlign='center';CTX.fillText(e.n,pos.x,pos.y-e.r-13);
-        const bw=e.r*2;CTX.fillStyle='#200';CTX.fillRect(pos.x-e.r,pos.y-e.r-10,bw,5);
-        const pct=e.hp/e.max;CTX.fillStyle=e.boss?`hsl(${pct*30},100%,50%)`:(pct>0.5?'#0f0':'#f50');CTX.fillRect(pos.x-e.r,pos.y-e.r-10,bw*pct,5);
+
+        // İsim etiketi — büyük, gölgeli, okunaklı
+        const nameSize = e.boss ? 15 : 13;
+        CTX.save();
+        CTX.font = `bold ${nameSize}px 'Courier New', monospace`;
+        CTX.textAlign = 'center';
+        const tw = CTX.measureText(e.n).width;
+        CTX.fillStyle = 'rgba(0,0,0,0.75)';
+        CTX.fillRect(pos.x - tw/2 - 5, pos.y - ER - 26, tw + 10, 18);
+        CTX.fillStyle = e.boss ? '#ffd700' : '#fff';
+        CTX.shadowColor = e.boss ? '#ffd700' : e.c;
+        CTX.shadowBlur = 6;
+        CTX.fillText(e.n, pos.x, pos.y - ER - 12);
+        CTX.restore();
+
+        // HP bar
+        const bw=ER*2;
+        CTX.fillStyle='#200';CTX.fillRect(pos.x-ER, pos.y-ER-8, bw, 6);
+        const pct=e.hp/e.max;
+        CTX.fillStyle=e.boss?`hsl(${pct*30},100%,50%)`:(pct>0.5?'#0f0':'#f50');
+        CTX.fillRect(pos.x-ER, pos.y-ER-8, bw*pct, 6);
     });
 
-    if(player.garlic){const gr=100+player.garlic*28;const grad=CTX.createRadialGradient(0,0,gr*0.6,0,0,gr);grad.addColorStop(0,'rgba(255,255,0,0.08)');grad.addColorStop(1,'transparent');CTX.fillStyle=grad;CTX.beginPath();CTX.arc(0,0,gr,0,6.28);CTX.fill();CTX.strokeStyle='rgba(255,255,0,0.25)';CTX.lineWidth=1;CTX.setLineDash([8,12]);CTX.beginPath();CTX.arc(0,0,gr,0,6.28);CTX.stroke();CTX.setLineDash([]);}
-    if(player.shield>0){CTX.save();CTX.shadowBlur=18;CTX.shadowColor='#00ffff';CTX.strokeStyle=`rgba(0,255,255,${0.3+player.shield*0.15})`;CTX.lineWidth=3+player.shield;CTX.beginPath();CTX.arc(0,0,33,0,6.28);CTX.stroke();CTX.restore();}
-    if(player.orb>0){for(let i=0;i<player.orb;i++){const a=orbAng+(Math.PI*2/player.orb)*i;const ox=Math.cos(a)*player.orbRange,oy=Math.sin(a)*player.orbRange;CTX.save();CTX.shadowBlur=15;CTX.shadowColor='#d0f';CTX.fillStyle='#d0f';CTX.beginPath();CTX.arc(ox,oy,9,0,6.28);CTX.fill();CTX.restore();}}
-    if(player.dashCd>0){CTX.fillStyle='#222';CTX.fillRect(-22,-40,44,5);CTX.fillStyle='#0ff';CTX.fillRect(-22,-40,44*(1-player.dashCd/player.maxDashCd),5);}
-    if(imgAvatar.complete&&imgAvatar.naturalWidth>0){CTX.save();CTX.beginPath();CTX.arc(0,-50,16,0,6.28);CTX.clip();CTX.drawImage(imgAvatar,-16,-66,32,32);CTX.restore();CTX.strokeStyle=player.shield>0?'#0ff':'#0f0';CTX.lineWidth=2;CTX.beginPath();CTX.arc(0,-50,16,0,6.28);CTX.stroke();}
-    if(player.invul<=0||frame%8<4){try{CTX.drawImage(imgPlayer,-26,-26,52,52);}catch(e){CTX.fillStyle='#0f0';CTX.beginPath();CTX.arc(0,0,20,0,6.28);CTX.fill();}}
+    // Sarımsak alanı
+    if(player.garlic){
+        const gr=(100+player.garlic*28)*charScale;
+        const grad=CTX.createRadialGradient(0,0,gr*0.6,0,0,gr);
+        grad.addColorStop(0,'rgba(255,255,0,0.08)');grad.addColorStop(1,'transparent');
+        CTX.fillStyle=grad;CTX.beginPath();CTX.arc(0,0,gr,0,6.28);CTX.fill();
+        CTX.strokeStyle='rgba(255,255,0,0.25)';CTX.lineWidth=1;CTX.setLineDash([8,12]);
+        CTX.beginPath();CTX.arc(0,0,gr,0,6.28);CTX.stroke();CTX.setLineDash([]);
+    }
 
-    CTX.save();CTX.shadowBlur=12;CTX.shadowColor=player.explosiveBullets?'#ff6600':'#ff0';CTX.fillStyle=player.explosiveBullets?'#ff6600':(player.slowBullets?'#6699ff':'#ff0');
-    bullets.forEach(b=>{const pos=relPos(b.x,b.y);if(Math.abs(pos.x)<VW&&Math.abs(pos.y)<VH){CTX.beginPath();CTX.arc(pos.x,pos.y,player.explosiveBullets?7:5,0,6.28);CTX.fill();}});CTX.restore();
+    // Kalkan halkası
+    if(player.shield>0){
+        CTX.save();CTX.shadowBlur=18;CTX.shadowColor='#00ffff';
+        CTX.strokeStyle=`rgba(0,255,255,${0.3+player.shield*0.15})`;
+        CTX.lineWidth=3+player.shield;CTX.beginPath();CTX.arc(0,0,player.r*charScale+8,0,6.28);CTX.stroke();
+        CTX.restore();
+    }
 
+    // Orb topları
+    if(player.orb>0){
+        for(let i=0;i<player.orb;i++){
+            const a=orbAng+(Math.PI*2/player.orb)*i;
+            const ox=Math.cos(a)*player.orbRange, oy=Math.sin(a)*player.orbRange;
+            CTX.save();CTX.shadowBlur=15;CTX.shadowColor='#d0f';CTX.fillStyle='#d0f';
+            CTX.beginPath();CTX.arc(ox,oy,10*charScale,0,6.28);CTX.fill();CTX.restore();
+        }
+    }
+
+    // Dash göstergesi
+    if(player.dashCd>0){
+        const PR=player.r*charScale;
+        CTX.fillStyle='#222';CTX.fillRect(-24,-PR-14,48,5);
+        CTX.fillStyle='#0ff';CTX.fillRect(-24,-PR-14,48*(1-player.dashCd/player.maxDashCd),5);
+    }
+
+    // ── ANA KARAKTER ÇİZİMİ ────────────────────────────
+    const PR = player.r * charScale; // görsel yarıçap (çarpışma için player.r kullanılmaya devam eder)
+    if(player.invul<=0||frame%8<4){
+        try{
+            if(imgPlayer.complete&&imgPlayer.naturalWidth>0){
+                CTX.drawImage(imgPlayer,-PR,-PR,PR*2,PR*2);
+            } else {
+                CTX.fillStyle='#1a3a1a';
+                CTX.beginPath();CTX.arc(0,0,PR,0,6.28);CTX.fill();
+            }
+        }catch(e){
+            CTX.fillStyle='#1a3a1a';
+            CTX.beginPath();CTX.arc(0,0,PR,0,6.28);CTX.fill();
+        }
+    }
+
+    // Profil fotoğrafını karakterin üzerine oval/yuvarlak çiz
+    if(avatarCanvas.width>0){
+        CTX.save();
+        CTX.beginPath();
+        CTX.arc(0,0,PR,0,Math.PI*2);
+        CTX.clip();
+        CTX.globalAlpha = player.invul>0 && frame%8>=4 ? 0.3 : 0.88;
+        CTX.drawImage(avatarCanvas,-PR,-PR,PR*2,PR*2);
+        CTX.restore();
+    } else if(imgAvatar.complete && imgAvatar.naturalWidth>0){
+        CTX.save();
+        CTX.beginPath();
+        CTX.arc(0,0,PR,0,Math.PI*2);
+        CTX.clip();
+        CTX.globalAlpha = player.invul>0 && frame%8>=4 ? 0.3 : 0.88;
+        CTX.drawImage(imgAvatar,-PR,-PR,PR*2,PR*2);
+        CTX.restore();
+    }
+
+    // Karakter çerçeve halkası (renkli)
+    CTX.save();
+    CTX.strokeStyle = player.shield>0 ? '#00ffff' : '#00ff44';
+    CTX.lineWidth = 2.5;
+    CTX.shadowBlur = 12; CTX.shadowColor = player.shield>0?'#00ffff':'#00ff44';
+    CTX.beginPath(); CTX.arc(0,0,PR,0,Math.PI*2); CTX.stroke();
+    CTX.restore();
+
+    // ── MERMİLER ──────────────────────────────────────
+    CTX.save();
+    CTX.shadowBlur=12;
+    CTX.shadowColor=player.explosiveBullets?'#ff6600':'#ff0';
+    CTX.fillStyle=player.explosiveBullets?'#ff6600':(player.slowBullets?'#6699ff':'#ff0');
+    bullets.forEach(b=>{
+        const pos=relPos(b.x,b.y);
+        if(Math.abs(pos.x)<VW&&Math.abs(pos.y)<VH){
+            CTX.beginPath();CTX.arc(pos.x,pos.y,player.explosiveBullets?8:6,0,6.28);CTX.fill();
+        }
+    });
+    CTX.restore();
+
+    // Partiküller ve yüzen yazılar
     parts.forEach(p=>{const pos=relPos(p.x,p.y);CTX.save();CTX.globalAlpha=Math.max(0,p.l/30);CTX.fillStyle=p.c;CTX.beginPath();CTX.arc(pos.x,pos.y,p.sz||3,0,6.28);CTX.fill();CTX.restore();p.x=wrap(p.x+p.vx,MAP_W);p.y=wrap(p.y+p.vy,MAP_H);p.l--;});
     parts=parts.filter(p=>p.l>0);
-    floats.forEach(f=>{const pos=relPos(f.x,f.y);CTX.save();CTX.globalAlpha=Math.max(0,f.l/50);CTX.fillStyle=f.c;CTX.font='bold 21px monospace';CTX.textAlign='center';CTX.fillText(f.t,pos.x,pos.y);CTX.restore();f.y-=0.7;f.l--;});
+    floats.forEach(f=>{const pos=relPos(f.x,f.y);CTX.save();CTX.globalAlpha=Math.max(0,f.l/50);CTX.fillStyle=f.c;CTX.font='bold 22px monospace';CTX.textAlign='center';CTX.shadowBlur=8;CTX.shadowColor=f.c;CTX.fillText(f.t,pos.x,pos.y);CTX.restore();f.y-=0.7;f.l--;});
     floats=floats.filter(f=>f.l>0);
 
     CTX.restore();
@@ -770,21 +951,34 @@ function drawMinimap() {
 }
 
 // ─── CHAT ──────────────────────────────────────────────
-function handleChat(s,m) {
+function handleChat(s, m) {
     if(isPaused||!gameActive) return;
-    const n=s.username;
-    const c=s.identity?.color||`hsl(${Math.random()*360},70%,50%)`;
-    const sub=s.badges?.some(b=>b.type==='subscriber')||false;
-    let isMod=s.badges?.some(b=>b.type==='moderator'||b.type==='broadcaster')||false;
+    const n = s.username;
+    const c = s.identity?.color || `hsl(${Math.random()*360},70%,50%)`;
+    const sub = s.badges?.some(b=>b.type==='subscriber') || false;
+    let isMod = s.badges?.some(b=>b.type==='moderator'||b.type==='broadcaster') || false;
     if(!isMod&&s.identity?.badges) isMod=s.identity.badges.some(b=>b.type==='moderator'||b.type==='broadcaster');
-    m=m.toLowerCase().trim();
-    if(m.startsWith('!')) notify(n,m,isMod);
-    if(isMod&&m==='!temizle'){enemies=[];return;}
-    if(isMod&&m==='!atak'){for(let k=0;k<12;k++)spawn(n,c,false,false);document.getElementById('mod-alert').style.display='block';setTimeout(()=>document.getElementById('mod-alert').style.display='none',2000);return;}
-    if(isMod&&m==='!boss'){spawnBoss(n);return;}
-    if(m==='!can'){player.hp=Math.min(player.hp+25,player.maxHp);txt(player.x,player.y-60,'❤+25','#0f0');return;}
-    if(m==='!saldır'){spawn(n,c,sub,false);spawn(n,c,sub,false);spawn(n,c,sub,false);return;}
-    spawn(n,c,sub,false);
+    const msg = m.toLowerCase().trim();
+
+    // Mod komutları
+    if(msg.startsWith('!')) notify(n,msg,isMod);
+    if(isMod&&msg==='!temizle'){enemies=[];return;}
+    if(isMod&&msg==='!atak'){for(let k=0;k<12;k++)spawn(n,c,false,false);document.getElementById('mod-alert').style.display='block';setTimeout(()=>document.getElementById('mod-alert').style.display='none',2000);return;}
+    if(isMod&&msg==='!boss'){spawnBoss(n);return;}
+    if(msg==='!can'){player.hp=Math.min(player.hp+25,player.maxHp);txt(player.x,player.y-60,'❤+25','#0f0');return;}
+    if(msg==='!saldır'){spawn(n,c,sub,false);spawn(n,c,sub,false);spawn(n,c,sub,false);return;}
+
+    // 1-10 sayı yazınca o kadar düşman gelsin
+    const num = parseInt(msg);
+    if(!isNaN(num) && num >= 1 && num <= 10 && String(num) === msg) {
+        for(let i=0; i<num; i++) spawn(n, c, sub, false);
+        notify(n, `${num}× saldırı!`, false);
+        txt(player.x, player.y-70, `${n}: ${num}× saldırı!`, c);
+        return;
+    }
+
+    // Normal mesaj → 1 düşman
+    spawn(n, c, sub, false);
 }
 
 function notify(n,m,isMod) {
@@ -793,22 +987,31 @@ function notify(n,m,isMod) {
 }
 
 // ─── SPAWN ─────────────────────────────────────────────
-function spawn(n,c,sub,boss) {
+function spawn(n, c, sub, boss) {
     const a=Math.random()*6.28, d=620+Math.random()*420;
     const sx=wrap(player.x+Math.cos(a)*d,MAP_W), sy=wrap(player.y+Math.sin(a)*d,MAP_H);
     let hp=32+Math.floor(player.lvl*5)+(sub?30:0);
     if(boss) hp*=14;
     const isRange=!boss&&Math.random()<0.3;
-    enemies.push({x:sx,y:sy,n:n,c:c,hp:hp,max:hp,boss:boss,r:boss?68:22,spd:boss?2.2:(1.4+Math.random()*1.8),range:isRange,frozen:0,slowed:0,id:eidCounter++});
+    // r: boss=85, normal=32 (daha büyük görseller)
+    enemies.push({
+        x:sx, y:sy, n:n, c:c, hp:hp, max:hp,
+        boss:boss, r:boss?85:32,
+        spd:boss?2.2:(1.4+Math.random()*1.8),
+        range:isRange, frozen:0, slowed:0, id:eidCounter++
+    });
 }
 
 function spawnBoss(n) {
-    const el=document.getElementById('boss-alert');el.innerText='⚠️ '+n.toUpperCase()+' GELİYOR ⚠️';el.style.display='block';
-    setTimeout(()=>el.style.display='none',3000);spawn(n,'#cc0000',false,true);
+    const el=document.getElementById('boss-alert');
+    el.innerText='⚠️ '+n.toUpperCase()+' GELİYOR ⚠️';
+    el.style.display='block';
+    setTimeout(()=>el.style.display='none',3000);
+    spawn(n,'#cc0000',false,true);
 }
 
 // ─── HIT / DAMAGE ──────────────────────────────────────
-function hitEnemy(e,d,silent=false) {
+function hitEnemy(e, d, silent=false) {
     if(!e||e.hp<=0) return;
     const dmg=Math.ceil(d); e.hp-=dmg; player.damageDealt+=dmg;
     for(let i=0;i<3;i++) parts.push({x:e.x,y:e.y,c:e.c,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,l:18,sz:3});
@@ -823,7 +1026,7 @@ function hitEnemy(e,d,silent=false) {
     }
 }
 
-function takeDamage(amount,killer) {
+function takeDamage(amount, killer) {
     if(player.isDashing||player.invul>0) return;
     if(player.shield>0&&frame%28===0){player.shield--;Snd.play('shield');txt(player.x,player.y-60,'BLOCK','#0ff');return;}
     if(player.shield>0) return;
@@ -865,7 +1068,7 @@ function levelUp() {
         {t:'YAVAŞLATAN MERMİ',d:'Mermiler düşmanları yavaşlatır',i:'🧊',r:'rare',f:()=>{player.slowBullets=true;}},
         {t:'SEKME MERMİSİ',d:'Mermiler 2 kez seker',i:'🏓',r:'epic',f:()=>{player.bounceBullets=true;}},
         {t:'HIZLI İYİLEŞME',d:'Her saniye 3 HP yenilenir',i:'💚',r:'rare',f:()=>{player.regen+=3;}},
-        {t:'TITAN GÖVDE',d:'+60 Max HP, +15 hasar gücü',i:'🏔️',r:'mythic',f:()=>{player.maxHp+=60;player.hp=Math.min(player.hp+40,player.maxHp);player.dmg+=15;}},
+        {t:'TİTAN GÖVDE',d:'+60 Max HP, +15 hasar gücü',i:'🏔️',r:'mythic',f:()=>{player.maxHp+=60;player.hp=Math.min(player.hp+40,player.maxHp);player.dmg+=15;}},
     ];
     opts.sort(()=>0.5-Math.random()).slice(0,3).forEach(o=>{
         const el=document.createElement('div');el.className='card '+o.r;
@@ -881,7 +1084,16 @@ function levelUp() {
 function getTarget(){let t=null,md=750;for(const e of enemies){const d=wdist(player.x,player.y,e.x,e.y);if(d<md){md=d;t=e;}}return t;}
 function txt(x,y,t,c){floats.push({x,y,t:String(t),c:c||'#fff',l:55});}
 function dropItem(x,y,t){items.push({x,y,t});}
-function spawnConfetti(){for(let i=0;i<70;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=`hsl(${Math.random()*360},100%,55%)`;c.style.animationDuration=(0.9+Math.random())+'s';c.style.width=c.style.height=(8+Math.random()*8)+'px';document.body.appendChild(c);setTimeout(()=>c.remove(),2000);}}
+function spawnConfetti(){
+    for(let i=0;i<70;i++){
+        const c=document.createElement('div');c.className='confetti';
+        c.style.left=Math.random()*100+'vw';
+        c.style.background=`hsl(${Math.random()*360},100%,55%)`;
+        c.style.animationDuration=(0.9+Math.random())+'s';
+        c.style.width=c.style.height=(8+Math.random()*8)+'px';
+        document.body.appendChild(c);setTimeout(()=>c.remove(),2000);
+    }
+}
 </script>
 </body>
 </html>
