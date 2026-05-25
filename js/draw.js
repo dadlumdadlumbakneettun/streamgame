@@ -1,18 +1,30 @@
 // Pixel Art tarzını desteklemek için Canvas üzerinde keskin piksel render ayarı (Gerektiğinde dışarıda da çağrılabilir)
-if (CTX) {
+if (typeof CTX !== 'undefined' && CTX) {
     CTX.imageSmoothingEnabled = false;
     CTX.mozImageSmoothingEnabled = false;
     CTX.webkitImageSmoothingEnabled = false;
     CTX.msImageSmoothingEnabled = false;
 }
 
+// Çizim fonksiyonlarının herhangi birinde hata oluşsa bile oyunun donmasını engelleyen güvenli sarmalayıcı
+function safeDraw(drawFn, name) {
+    try {
+        drawFn();
+    } catch (e) {
+        // Hata konsola yazdırılır ancak oyunun çizimi ve akışı asla kesintiye uğramaz
+        console.warn(`Çizim Hatası [${name}]:`, e);
+    }
+}
+
 function draw() {
+    if (typeof CTX === 'undefined' || !CTX) return;
+
     // Derin ve piksellenmiş orman tabanı arka plan rengi
     CTX.fillStyle = '#050c05';
     CTX.fillRect(0, 0, W, H);
     
     // zoomLevel değerinin tanımsız, 0 veya negatif olma ihtimaline karşı güvenlik bariyeri
-    const safeZoom = (zoomLevel && zoomLevel > 0.05 && !isNaN(zoomLevel)) ? zoomLevel : 1.0;
+    const safeZoom = (typeof zoomLevel !== 'undefined' && zoomLevel && zoomLevel > 0.05 && !isNaN(zoomLevel)) ? zoomLevel : 1.0;
     
     CTX.save();
     try {
@@ -22,32 +34,32 @@ function draw() {
         const VW = W / safeZoom, VH = H / safeZoom;
         const HVW = VW / 2 + 80, HVH = VH / 2 + 80; // Görüş alanı dışı eleme marjı
 
-        // KATMANLI PİXEL ART ÇİZİM SIRASI
-        drawTerrain(VW, VH, HVW, HVH);
-        drawGrid(VW, VH); // Piksel zemin dokusu buraya entegre edildi
-        drawRoads(VW, VH);
-        drawLandmarks(HVW, HVH);
-        drawRocks(HVW, HVH);
-        drawTrees(HVW, HVH);
-        drawCampfires(HVW, HVH);
-        drawProps(HVW, HVH);
-        drawItems(HVW, HVH);
-        drawEnemyBullets(VW, VH);
-        drawEnemies(HVW, HVH);
-        drawGarlicZone();
-        drawShieldRing();
-        drawOrbs();
-        drawDashBar();
-        drawPlayer();
-        drawBullets(VW, VH);
-        drawParticles();
-        drawFloats();
+        // KATMANLI GÜVENLİ ÇİZİM SIRASI
+        safeDraw(() => drawTerrain(VW, VH, HVW, HVH), "Zemin Bölgeleri");
+        safeDraw(() => drawGrid(VW, VH), "Piksel Izgara");
+        safeDraw(() => drawRoads(VW, VH), "Yollar");
+        safeDraw(() => drawLandmarks(HVW, HVH), "İşaret Noktaları");
+        safeDraw(() => drawRocks(HVW, HVH), "Kayalar");
+        safeDraw(() => drawTrees(HVW, HVH), "Ağaçlar");
+        safeDraw(() => drawCampfires(HVW, HVH), "Kamp Ateşleri");
+        safeDraw(() => drawProps(HVW, HVH), "Kutular ve Variller");
+        safeDraw(() => drawItems(HVW, HVH), "Yerdeki Eşyalar");
+        safeDraw(() => drawEnemyBullets(VW, VH), "Düşman Mermileri");
+        safeDraw(() => drawEnemies(HVW, HVH), "Düşmanlar");
+        safeDraw(() => drawGarlicZone(), "Sarımsak Alanı");
+        safeDraw(() => drawShieldRing(), "Kalkan Çemberi");
+        safeDraw(() => drawOrbs(), "Dönen Orb'lar");
+        safeDraw(() => drawDashBar(), "Dash Barı");
+        safeDraw(() => drawPlayer(), "Oyuncu");
+        safeDraw(() => drawBullets(VW, VH), "Oyuncu Mermileri");
+        safeDraw(() => drawParticles(), "Parçacık Efektleri");
+        safeDraw(() => drawFloats(), "Hasar Sayıları");
     } finally {
         CTX.restore();
     }
     
     // Pixel art temalı detaylı mini harita
-    drawMinimap();
+    safeDraw(() => drawMinimap(), "Mini Harita");
 }
 
 // Detaylı pixel art arazi renk paletleri
@@ -63,11 +75,13 @@ const terrainColors = {
 
 // Arazileri detaylı pixel art dokularıyla çiz
 function drawTerrain(VW, VH, HVW, HVH) {
-    // Aşırı büyük viewport oluşmasını önlemek için güvenlik sınırı
+    if (typeof terrainZones === 'undefined' || !terrainZones) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     terrainZones.forEach(z => {
+        if (!z) return;
         const pos = relPos(z.x, z.y);
         if (Math.abs(pos.x) > safeHVW + z.r || Math.abs(pos.y) > safeHVH + z.r) return;
 
@@ -83,7 +97,7 @@ function drawTerrain(VW, VH, HVW, HVH) {
         CTX.save();
         CTX.strokeStyle = colors.dark;
         CTX.lineWidth = 6;
-        CTX.setLineDash([8, 12, 4, 16]); // Piksellenmiş kenar geçişi
+        CTX.setLineDash([8, 12, 4, 16]); 
         CTX.beginPath();
         CTX.arc(pos.x, pos.y, z.r - 3, 0, Math.PI * 2);
         CTX.stroke();
@@ -132,11 +146,13 @@ function drawTerrain(VW, VH, HVW, HVH) {
 
 // Yolları piksellenmiş parke taşı veya toprak yol görünümüne kavuştur
 function drawRoads(VW, VH) {
-    // Çökmeyi önlemek için güvenli render limitleri
+    if (typeof roads === 'undefined' || !roads) return;
+
     const safeVW = Math.min(VW, 3000);
     const safeVH = Math.min(VH, 3000);
 
     roads.forEach(rd => {
+        if (!rd) return;
         CTX.save(); 
         
         CTX.fillStyle = '#1c1712'; 
@@ -179,7 +195,6 @@ function drawRoads(VW, VH) {
 
 // Zemin piksellenmiş ızgara ve yosun dokusu çizimi
 function drawGrid(VW, VH) {
-    // Sonsuz iç içe döngüleri önlemek için render tavanı
     const safeVW = Math.min(VW, 3000);
     const safeVH = Math.min(VH, 3000);
 
@@ -199,7 +214,7 @@ function drawGrid(VW, VH) {
     }
     for (let y = -safeVH / 2 - gs; y < safeVH / 2 + gs; y += gs) {
         const dy = Math.floor((y - oy) / gs) * gs + (gs - oy);
-        CTX.moveTo(-safeVW / 2, dy); CTX.lineTo(-safeVW / 2, dy); // Sol kenara sabitleme hatası düzeltildi
+        CTX.moveTo(-safeVW / 2, dy); CTX.lineTo(safeVW / 2, dy); // Yatay çizgi hizalama hatası düzeltildi
     }
     CTX.stroke();
     
@@ -222,10 +237,13 @@ function drawGrid(VW, VH) {
 
 // Landmark (İşaret noktaları) - Gizemli pixel rün dairesi şeklinde
 function drawLandmarks(HVW, HVH) {
+    if (typeof landmarks === 'undefined' || !landmarks) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     landmarks.forEach(lm => {
+        if (!lm) return;
         const pos = relPos(lm.x, lm.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -253,17 +271,21 @@ function drawLandmarks(HVW, HVH) {
         CTX.fillStyle = '#ffffff';
         CTX.font = "bold 11px 'Courier New', monospace";
         CTX.textAlign = 'center';
-        CTX.fillText(`.: ${lm.name.toUpperCase()} :.`, pos.x, pos.y - lm.r - 10);
+        const lmName = lm.name ? lm.name.toUpperCase() : "LANDMARK";
+        CTX.fillText(`.: ${lmName} :.`, pos.x, pos.y - lm.r - 10);
         CTX.restore();
     });
 }
 
 // Kayaları gölgeli ve köşeli pixel art tarzında çiz
 function drawRocks(HVW, HVH) {
+    if (typeof rocks === 'undefined' || !rocks) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     rocks.forEach(r => {
+        if (!r) return;
         const pos = relPos(r.x, r.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -274,7 +296,7 @@ function drawRocks(HVW, HVH) {
         CTX.ellipse(pos.x + r.r * 0.15, pos.y + r.r * 0.4, r.r, r.r * 0.45, 0, 0, Math.PI * 2);
         CTX.fill();
 
-        CTX.fillStyle = r.c; 
+        CTX.fillStyle = r.c || '#666'; 
         CTX.beginPath();
         const steps = 6;
         for (let i = 0; i < steps; i++) {
@@ -310,10 +332,13 @@ function drawRocks(HVW, HVH) {
 
 // Ağaçları muhteşem katmanlı pixel art çam/yaprak ağacı şeklinde çiz
 function drawTrees(HVW, HVH) {
+    if (typeof trees === 'undefined' || !trees) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     trees.forEach(t => {
+        if (!t) return;
         const pos = relPos(t.x, t.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -378,13 +403,18 @@ function drawTrees(HVW, HVH) {
 
 // Kamp ateşlerini animasyonlu, çıtırdayan odunlu ve piksellenmiş alev efektleriyle çiz
 function drawCampfires(HVW, HVH) {
+    if (typeof campfires === 'undefined' || !campfires) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     campfires.forEach(c => {
+        if (!c) return;
         const pos = relPos(c.x, c.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
+        // Zamanlayıcı tanımsız ise güvenle sıfırla (NaN kilitlenmesini engeller)
+        if (typeof c.t === 'undefined' || isNaN(c.t)) c.t = 0;
         c.t++;
         const animState = Math.floor(c.t * 0.15) % 4; 
         
@@ -443,10 +473,13 @@ function drawCampfires(HVW, HVH) {
 
 // Barrel (Varil) ve Box (Kutu) objelerini detaylı pikselli dokularla süsle
 function drawProps(HVW, HVH) {
+    if (typeof props === 'undefined' || !props) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     props.forEach(p => {
+        if (!p) return;
         const pos = relPos(p.x, p.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -500,7 +533,7 @@ function drawProps(HVW, HVH) {
             CTX.fillRect(pos.x - 12, pos.y + 10, 2, 2);
             CTX.fillRect(pos.x + 10, pos.y + 10, 2, 2);
 
-            if (p.hp < 3) {
+            if (typeof p.hp !== 'undefined' && p.hp < 3) {
                 CTX.fillStyle = '#1a0000';
                 CTX.fillRect(pos.x - 14, pos.y - 20, 28, 5);
                 CTX.fillStyle = p.hp === 2 ? '#ffcc00' : '#ff2200';
@@ -513,10 +546,13 @@ function drawProps(HVW, HVH) {
 
 // Yerden toplanabilir eşyaları pixel art nesnelerine dönüştür
 function drawItems(HVW, HVH) {
+    if (typeof items === 'undefined' || !items) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     items.forEach(it => {
+        if (!it) return;
         const pos = relPos(it.x, it.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -530,7 +566,7 @@ function drawItems(HVW, HVH) {
         CTX.fill();
         CTX.globalAlpha = 1.0;
 
-        if (it.t.includes('xp')) {
+        if (it.t && it.t.includes('xp')) {
             const isBig = it.t === 'xp_big';
             const sz = isBig ? 8 : 5;
             
@@ -586,11 +622,14 @@ function drawItems(HVW, HVH) {
 
 // Düşman mermilerini pikselli, parlayan sihir kürelerine dönüştür
 function drawEnemyBullets(VW, VH) {
+    if (typeof eBullets === 'undefined' || !eBullets) return;
+
     const safeVW = Math.min(VW, 3000);
     const safeVH = Math.min(VH, 3000);
 
     CTX.save();
     eBullets.forEach(b => {
+        if (!b) return;
         const pos = relPos(b.x, b.y);
         if (Math.abs(pos.x) < safeVW && Math.abs(pos.y) < safeVH) {
             CTX.fillStyle = 'rgba(255,85,85,0.4)';
@@ -608,10 +647,13 @@ function drawEnemyBullets(VW, VH) {
 
 // Düşmanları çok daha şık, detaylı, karanlık fantezi canavarı piksellerine dönüştür
 function drawEnemies(HVW, HVH) {
+    if (typeof enemies === 'undefined' || !enemies) return;
+
     const safeHVW = Math.min(HVW, 2000);
     const safeHVH = Math.min(HVH, 2000);
 
     enemies.forEach(e => {
+        if (!e) return;
         const pos = relPos(e.x, e.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -636,11 +678,15 @@ function drawEnemies(HVW, HVH) {
             CTX.stroke();
         }
 
-        const img = e.range ? imgRanged : imgMelee;
+        // Görsel tanımlarının eksik olması/isimlendirme farklılığı ihtimaline karşı güvenli kontrol
+        const img = e.range ? 
+            (typeof imgRanged !== 'undefined' ? imgRanged : null) : 
+            (typeof imgMelee !== 'undefined' ? imgMelee : null);
+            
         let drawnCustom = false;
         
         try {
-            if (img.complete && img.naturalWidth > 0) {
+            if (img && img.complete && img.naturalWidth > 0) {
                 CTX.drawImage(img, pos.x - ER, pos.y - ER, ER * 2, ER * 2);
             } else {
                 drawnCustom = true;
@@ -665,7 +711,7 @@ function drawEnemies(HVW, HVH) {
                 CTX.fillRect(pos.x - ER, pos.y - ER * 0.6, ER * 2, ER * 1.4);
                 CTX.fillStyle = '#2b1a4a';
                 CTX.fillRect(pos.x - ER * 0.8, pos.y + ER * 0.5, ER * 1.6, ER * 0.5);
-                CTX.fillStyle = e.boss ? '#ffff00' : '#00ff66';
+                CTX.fillStyle = e.boss ? '#ffd700' : '#00ff66';
                 CTX.fillRect(pos.x - ER * 0.5, pos.y - ER * 0.1, 4, 3);
                 CTX.fillRect(pos.x + ER * 0.2, pos.y - ER * 0.1, 4, 3);
             }
@@ -691,18 +737,19 @@ function drawEnemies(HVW, HVH) {
         CTX.font = `bold ${e.boss ? '13px' : '10px'} 'Courier New', monospace`;
         CTX.textAlign = 'center';
         
-        const tw = CTX.measureText(e.n).width;
+        const eName = e.n || "Düşman";
+        const tw = CTX.measureText(eName).width;
         CTX.fillStyle = 'rgba(10, 10, 10, 0.85)';
         CTX.fillRect(pos.x - tw / 2 - 4, pos.y - ER - 24, tw + 8, 14);
         
         CTX.fillStyle = e.boss ? '#ffd700' : '#ffffff';
-        CTX.fillText(e.n, pos.x, pos.y - ER - 14);
+        CTX.fillText(eName, pos.x, pos.y - ER - 14);
 
         const bw = ER * 2;
         CTX.fillStyle = '#140505';
         CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw, 4);
         
-        const pct = e.hp / e.max;
+        const pct = (typeof e.hp !== 'undefined' && typeof e.max !== 'undefined') ? (e.hp / e.max) : 1.0;
         CTX.fillStyle = e.boss ? '#e60000' : (pct > 0.5 ? '#00e64d' : '#ff5500');
         CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw * pct, 4);
         
@@ -712,7 +759,7 @@ function drawEnemies(HVW, HVH) {
 
 // Sarımsak Alanı - Gizemli aura rünleri ve dairesel pikselli dalgalar halinde
 function drawGarlicZone() {
-    if (!player.garlic) return;
+    if (typeof player === 'undefined' || !player || !player.garlic) return;
     const gr = (100 + player.garlic * 28) * charScale;
     
     CTX.save();
@@ -746,7 +793,7 @@ function drawGarlicZone() {
 
 // Kalkan Çemberi - Fütüristik parlayan koruma katmanı
 function drawShieldRing() {
-    if (!player.shield) return;
+    if (typeof player === 'undefined' || !player || !player.shield) return;
     CTX.save();
     
     const PR = player.r * charScale;
@@ -769,7 +816,7 @@ function drawShieldRing() {
 
 // Orb'lar (Dönen Sihirli Küreler) - RPG Enerji Kristali Şeklinde
 function drawOrbs() {
-    if (!player.orb) return;
+    if (typeof player === 'undefined' || !player || !player.orb) return;
     CTX.save();
     
     for (let i = 0; i < player.orb; i++) {
@@ -791,7 +838,7 @@ function drawOrbs() {
 
 // Dash (Hızlı Atılma) Bekleme Süresi Barı
 function drawDashBar() {
-    if (player.dashCd <= 0) return;
+    if (typeof player === 'undefined' || !player || player.dashCd <= 0) return;
     const PR = player.r * charScale;
     
     CTX.save();
@@ -806,6 +853,7 @@ function drawDashBar() {
 
 // Oyuncu Karakterini detaylı bir kahraman piksel görünümüne dönüştür
 function drawPlayer() {
+    if (typeof player === 'undefined' || !player) return;
     const PR = player.r * charScale;
     
     CTX.save();
@@ -819,7 +867,11 @@ function drawPlayer() {
     
     if (shouldDraw) {
         let avatarDrawn = false;
-        const avatarSrc = avatarCanvas.width > 0 ? avatarCanvas : (imgAvatar.complete && imgAvatar.naturalWidth > 0 ? imgAvatar : null);
+        
+        // Avatar tanımlarının güvenli kontrolü
+        const hasAvatarCanvas = (typeof avatarCanvas !== 'undefined' && avatarCanvas && avatarCanvas.width > 0);
+        const hasImgAvatar = (typeof imgAvatar !== 'undefined' && imgAvatar && imgAvatar.complete && imgAvatar.naturalWidth > 0);
+        const avatarSrc = hasAvatarCanvas ? avatarCanvas : (hasImgAvatar ? imgAvatar : null);
         
         if (avatarSrc) {
             try {
@@ -829,7 +881,7 @@ function drawPlayer() {
                 CTX.drawImage(avatarSrc, -PR, -PR, PR * 2, PR * 2);
                 avatarDrawn = true;
             } catch (e) {
-                avatarCanvas.width = 0;
+                if (hasAvatarCanvas) avatarCanvas.width = 0;
             }
         }
         
@@ -861,11 +913,14 @@ function drawPlayer() {
 
 // Oyuncu Mermilerini Parıltılı Pixel Art Büyü Mermilerine Dönüştür
 function drawBullets(VW, VH) {
+    if (typeof bullets === 'undefined' || !bullets) return;
+
     const safeVW = Math.min(VW, 3000);
     const safeVH = Math.min(VH, 3000);
 
     CTX.save();
     bullets.forEach(b => {
+        if (!b) return;
         const pos = relPos(b.x, b.y);
         if (Math.abs(pos.x) < safeVW && Math.abs(pos.y) < safeVH) {
             
@@ -894,7 +949,10 @@ function drawBullets(VW, VH) {
 
 // Parçacık (Kan, Kıvılcım vb.) efektlerini keskin piksellere dönüştür
 function drawParticles() {
+    if (typeof parts === 'undefined' || !parts) return;
+
     parts.forEach(p => {
+        if (!p) return;
         const pos = relPos(p.x, p.y);
         CTX.save();
         
@@ -910,16 +968,19 @@ function drawParticles() {
         p.y = wrap(p.y + p.vy, MAP_H);
         p.l--;
     });
-    parts = parts.filter(p => p.l > 0);
+    parts = parts.filter(p => p && p.l > 0);
 }
 
 // Hasar Sayıları ve Uçan Yazılar (Retro Arcade Font Görünümüyle)
 function drawFloats() {
+    if (typeof floats === 'undefined' || !floats) return;
+
     CTX.save();
     CTX.font = "bold 15px 'Courier New', monospace"; 
     CTX.textAlign = 'center';
     
     floats.forEach(f => {
+        if (!f) return;
         const pos = relPos(f.x, f.y);
         CTX.globalAlpha = Math.max(0, f.l / 50);
         
@@ -933,11 +994,13 @@ function drawFloats() {
         f.l--;
     });
     CTX.restore();
-    floats = floats.filter(f => f.l > 0);
+    floats = floats.filter(f => f && f.l > 0);
 }
 
 // Efsanevi Retro Pixel Art Mini Harita
 function drawMinimap() {
+    if (typeof terrainZones === 'undefined' || typeof player === 'undefined') return;
+
     const MS = 150, SC = MS / MAP_W, MX = W - MS - 15, MY = 65;
     CTX.save();
     
@@ -959,22 +1022,28 @@ function drawMinimap() {
     };
     
     terrainZones.forEach(z => {
+        if (!z) return;
         CTX.fillStyle = tc[z.type] || '#1f331f';
         CTX.beginPath();
         CTX.arc(MX + z.x * SC, MY + z.y * SC, z.r * SC, 0, Math.PI * 2);
         CTX.fill();
     });
 
-    CTX.fillStyle = '#00ffff';
-    items.forEach(it => {
-        CTX.fillRect(MX + it.x * SC - 1, MY + it.y * SC - 1, 2, 2);
-    });
+    if (typeof items !== 'undefined' && items) {
+        CTX.fillStyle = '#00ffff';
+        items.forEach(it => {
+            if (it) CTX.fillRect(MX + it.x * SC - 1, MY + it.y * SC - 1, 2, 2);
+        });
+    }
 
-    enemies.forEach(e => {
-        CTX.fillStyle = e.boss ? '#ff3300' : '#ff9999';
-        const sz = e.boss ? 4 : 2;
-        CTX.fillRect(MX + e.x * SC - sz/2, MY + e.y * SC - sz/2, sz, sz);
-    });
+    if (typeof enemies !== 'undefined' && enemies) {
+        enemies.forEach(e => {
+            if (!e) return;
+            CTX.fillStyle = e.boss ? '#ff3300' : '#ff9999';
+            const sz = e.boss ? 4 : 2;
+            CTX.fillRect(MX + e.x * SC - sz/2, MY + e.y * SC - sz/2, sz, sz);
+        });
+    }
 
     const px = MX + player.x * SC, py = MY + player.y * SC;
     
