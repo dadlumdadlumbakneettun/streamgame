@@ -10,11 +10,9 @@
 <div id="game-wrapper">
 <canvas id="cvs"></canvas>
 
-<!-- XP & Timer -->
 <div id="xp-container"><div id="bar-xp"></div></div>
 <div id="timer-indicator">00:00</div>
 
-<!-- Sol üst HUD -->
 <div id="ui-overlay">
     <div class="stat-row" style="color:#f55">
         <span>HP</span>
@@ -31,13 +29,11 @@
     <div id="kills-row" class="stat-row" style="color:#f80;font-size:14px;display:none;">☠️ <span id="txt-kills">0</span></div>
 </div>
 
-<!-- Sağ üst streamer HUD -->
 <div id="streamer-hud">
     <img id="hud-avatar" src="" alt="">
     <span id="hud-name"></span>
 </div>
 
-<!-- Ayarlar -->
 <div id="settings-icon" onclick="openSettings()">⚙️</div>
 <div id="settings-modal">
     <div class="settings-box">
@@ -66,10 +62,8 @@
     </div>
 </div>
 
-<!-- Chat bildirimleri -->
 <div id="chat-notifs"></div>
 
-<!-- Boss & Mod uyarıları -->
 <div id="boss-alert">⚠️ BOSS GELİYOR ⚠️</div>
 <div id="boss-hpbar-wrap">
     <div id="boss-hpbar-label">BOSS</div>
@@ -77,10 +71,8 @@
 </div>
 <div id="mod-alert">⚠️ MODERATÖR SALDIRISI!</div>
 
-<!-- Q hint -->
 <div id="q-hint">[Q] — BOT DALGASI ÇAĞır</div>
 
-<!-- Duraklat -->
 <div id="pause-overlay">
     <div style="font-size:45px;margin-bottom:20px;">⏸ DURAKLATILDI</div>
     <div style="font-size:18px;color:#555;margin-bottom:35px;">ESC veya butona bas</div>
@@ -88,14 +80,12 @@
             onclick="resumeFromSimplePause()">▶ DEVAM ET</button>
 </div>
 
-<!-- Seviye atlama -->
 <div id="level-screen" class="overlay-screen">
     <h1 class="rainbow-txt-anim" style="margin-bottom:25px;font-size:55px;">⬆ SEVİYE ATLADIN!</h1>
     <p style="color:#555;font-size:14px;margin-bottom:25px;letter-spacing:2px;">BİR GÜÇLENDIRME SEÇ</p>
     <div class="card-container" id="card-box"></div>
 </div>
 
-<!-- Oyun sonu -->
 <div id="game-over-screen" class="overlay-screen">
     <h1 style="color:#f00;font-size:58px;text-shadow:0 0 25px red;margin-bottom:8px;">☠ ÖLDÜN!</h1>
     <div style="font-size:18px;color:#666;margin-bottom:20px;">Seni öldüren:</div>
@@ -104,7 +94,6 @@
     <button class="big-btn" onclick="restartGame()">↺ TEKRAR BAŞLA</button>
 </div>
 
-<!-- Ana menü -->
 <div id="start-menu" class="overlay-screen">
     <div id="left-fx"></div>
     <div id="right-fx"></div>
@@ -112,14 +101,12 @@
     <button class="big-btn" onclick="init()">BAŞLAT</button>
 </div>
 
-<!-- Giriş ekranı -->
-<div id="login-screen">
-    <div class="login-box">
+<div id="login-screen" style="display: flex; flex-direction: row; gap: 30px; justify-content: center; align-items: center; background: rgba(0,0,0,0.95); width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 9999;">
+    <div class="login-box" style="margin: 0;">
         <div id="login-preview-wrap">
             <img id="login-avatar-preview" src="" alt="">
             <div>
                 <div id="login-found-name"></div>
-                <div id="login-found-id"></div>
             </div>
         </div>
 
@@ -130,25 +117,18 @@
         <button id="btn-login" onclick="doLogin()">BAĞLAN</button>
         <div id="login-status"></div>
     </div>
+
+    <div id="suggested-streamers" style="background: #111; border: 2px solid #222; border-radius: 12px; padding: 25px; width: 320px; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.7);">
+        <h3 style="margin: 0 0 5px 0; color: #53fc18; font-size: 16px; border-bottom: 2px solid #222; padding-bottom: 10px; text-align: center; font-weight: bold; letter-spacing: 1.5px;">ÖNERİLEN YAYINCILAR</h3>
+        <div id="streamers-list" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="text-align: center; color: #666; font-size: 13px;">Yayıncılar yükleniyor...</div>
+        </div>
+    </div>
 </div>
 
 <div id="log-area" style="display:none;">Sistem Hazır.</div>
 </div>
 
-<!--
-    SCRIPT YÜKLEMİ — SIRA ÖNEMLİ:
-    1. config   → sabitler (MAP_W, PLAYER_DEFAULT, ...)
-    2. state    → canvas + tüm global değişkenler
-    3. helpers  → yardımcı fonksiyonlar (wdist, relPos, txt, ...)
-    4. audio    → Snd, audioFiles
-    5. world    → resetWorld()
-    6. enemies  → spawn, hitEnemy, takeDamage, ...
-    7. chat     → handleChat, connectPusher, notify
-    8. draw     → draw(), drawMinimap()
-    9. ui       → levelUp(), updateHUD(), settings, triggerGameOver()
-   10. login    → doLogin(), bakeAvatar(), goToStartMenu(), ...
-   11. main     → init(), loop(), update(), keyboard
--->
 <script src="js/config.js"></script>
 <script src="js/state.js"></script>
 <script src="js/helpers.js"></script>
