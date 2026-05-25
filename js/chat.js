@@ -45,7 +45,18 @@ function handleChat(s, m) {
     if (msg === '!saldır') { spawn(n,c,sub,false); spawn(n,c,sub,false); spawn(n,c,sub,false); return; }
 
     const num = parseInt(msg);
-    if (!isNaN(num) && num >= 1 && num <= 10 && String(num) === msg) {
+    const isExactNum = !isNaN(num) && String(num) === msg;
+
+    // Moderatörler: 1–100 arası sayı yazabilir
+    if (isMod && isExactNum && num >= 1 && num <= 100) {
+        for (let i = 0; i < num; i++) spawn(n, c, sub, true);
+        notify(n, `${num}× saldırı! (MOD)`, true);
+        txt(player.x, player.y - 70, `${n}: ${num}× saldırı!`, c);
+        return;
+    }
+
+    // Normal izleyiciler: 1–10 arası sayı yazabilir
+    if (!isMod && isExactNum && num >= 1 && num <= 10) {
         for (let i = 0; i < num; i++) spawn(n, c, sub, false);
         notify(n, `${num}× saldırı!`, false);
         txt(player.x, player.y - 70, `${n}: ${num}× saldırı!`, c);
