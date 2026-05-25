@@ -1,4 +1,3 @@
-// Pixel Art tarzını desteklemek için Canvas üzerinde keskin piksel render ayarı (Gerektiğinde dışarıda da çağrılabilir)
 if (typeof CTX !== 'undefined' && CTX) {
     CTX.imageSmoothingEnabled = false;
     CTX.mozImageSmoothingEnabled = false;
@@ -6,7 +5,6 @@ if (typeof CTX !== 'undefined' && CTX) {
     CTX.msImageSmoothingEnabled = false;
 }
 
-// Eşya ve XP renk haritası - Çizimlerin çökmesini engelleyen kritik tanım
 const ITEM_CMAP = { 
     xp: '#00bfff', 
     xp_big: '#00ffff', 
@@ -15,10 +13,8 @@ const ITEM_CMAP = {
     shield: '#00ffff' 
 };
 
-// Çevrimdışı (Offscreen) Çim Doku Kalıbı Değişkeni
 let grassPattern = null;
 
-// Paylaşılan görsel referans alınarak hazırlanan dikişsiz (seamless) pixel art çim dokusu üretici
 function initGrassPattern() {
     if (typeof document === 'undefined') return;
     const pCanvas = document.createElement('canvas');
@@ -26,26 +22,21 @@ function initGrassPattern() {
     pCanvas.height = 64;
     const pCtx = pCanvas.getContext('2d');
     
-    // Görseldeki gibi derin koyu orman yeşili taban rengi
     pCtx.fillStyle = '#1b381d';
     pCtx.fillRect(0, 0, 64, 64);
     
-    // Pixel art çim bıçaklarını çizme fonksiyonu (Koyu gölge ve açık yeşil parıltı)
     const drawGrassBlade = (x, y, h) => {
-        // Gölge pikselleri
         pCtx.fillStyle = '#142b16';
         pCtx.fillRect(x, y, 2, h);
         pCtx.fillRect(x - 2, y + 2, 2, h - 2);
         pCtx.fillRect(x + 2, y + 1, 2, h - 1);
         
-        // Işıklı pikseller (Dokuyu hissettiren 2. ana yeşil ton)
         pCtx.fillStyle = '#224825';
         pCtx.fillRect(x, y - 2, 2, 2);
         pCtx.fillRect(x - 2, y, 2, 2);
         pCtx.fillRect(x + 2, y - 1, 2, 2);
     };
     
-    // Seamless (birbirini tekrarlayan) doku için optimize edilmiş çim yerleşim koordinatları
     const grassCoords = [
         [4, 8, 10], [16, 24, 8], [28, 4, 12], [40, 18, 9], [52, 10, 11],
         [10, 40, 9], [22, 52, 11], [36, 36, 10], [48, 48, 8], [58, 32, 12],
@@ -53,7 +44,6 @@ function initGrassPattern() {
         [8, 22, 11], [20, 44, 8], [32, 16, 12], [44, 58, 9], [56, 20, 10]
     ];
     
-    // Kenar taşmalarını sararak kusursuz birleştirme yapalım
     grassCoords.forEach(([cx, cy, ch]) => {
         drawGrassBlade(cx, cy, ch);
         if (cx < 4) drawGrassBlade(cx + 64, cy, ch);
@@ -65,7 +55,6 @@ function initGrassPattern() {
     grassPattern = CTX.createPattern(pCanvas, 'repeat');
 }
 
-// Çizim fonksiyonlarının herhangi birinde hata oluşsa bile oyunun donmasını engelleyen güvenli sarmalayıcı
 function safeDraw(drawFn, name) {
     try {
         drawFn();
@@ -77,16 +66,13 @@ function safeDraw(drawFn, name) {
 function draw() {
     if (typeof CTX === 'undefined' || !CTX) return;
 
-    // Çim kalıbı ilk kez çalışıyorsa hafızaya al
     if (!grassPattern) {
         initGrassPattern();
     }
 
-    // fallback düz arka plan
     CTX.fillStyle = '#1b381d';
     CTX.fillRect(0, 0, W, H);
     
-    // zoomLevel değerinin tanımsız, 0 veya negatif olma ihtimaline karşı güvenlik bariyeri
     const safeZoom = (typeof zoomLevel !== 'undefined' && zoomLevel && zoomLevel > 0.05 && !isNaN(zoomLevel)) ? zoomLevel : 1.0;
     
     CTX.save();
@@ -97,14 +83,12 @@ function draw() {
         const VW = W / safeZoom, VH = H / safeZoom;
         const HVW = VW / 2 + 80, HVH = VH / 2 + 80; 
 
-        // Kalıbı oyuncunun koordinatlarına göre kaydırarak dünyada sabit kalmasını sağlayalım (Kayma hissini önler)
         if (grassPattern && typeof player !== 'undefined' && player) {
             const matrix = new DOMMatrix();
             matrix.translateSelf(-player.x, -player.y);
             grassPattern.setTransform(matrix);
         }
 
-        // KATMANLI GÜVENLİ ÇİZİM SIRASI (Büyük renkli yuvarlaklar ve Landmarks tamamen temizlendi!)
         safeDraw(() => {
             if (grassPattern) {
                 CTX.fillStyle = grassPattern;
@@ -133,11 +117,9 @@ function draw() {
         CTX.restore();
     }
     
-    // Pixel art temalı detaylı mini harita
     safeDraw(() => drawMinimap(), "Mini Harita");
 }
 
-// Arazilerin sadece koordinat tabanlı mini harita temsili için renk paletleri
 const terrainColors = {
     water:  { main: '#004c8c', light: '#0073b3', dark: '#00264d', accent: '#33ccff' },
     sand:   { main: '#bfa15f', light: '#d9c58c', dark: '#8c6b30', accent: '#f2e5b1' },
@@ -148,12 +130,9 @@ const terrainColors = {
     swamp:  { main: '#1c2e15', light: '#2c4721', dark: '#0e1a0a', accent: '#3e632e' }
 };
 
-// drawTerrain fonksiyonunun içi boşaltıldı - Ana haritadaki renkli yuvarlaklar tamamen kalktı!
 function drawTerrain(VW, VH, HVW, HVH) {
-    // Ana haritadaki renkli daireler kaldırıldı. İstek doğrultusunda temiz çim dokusu aktiftir.
 }
 
-// Yolları piksellenmiş parke taşı veya toprak yol görünümüne kavuştur
 function drawRoads(VW, VH) {
     if (typeof roads === 'undefined' || !roads) return;
     if (typeof MAP_H === 'undefined' || typeof MAP_W === 'undefined') return;
@@ -203,14 +182,9 @@ function drawRoads(VW, VH) {
     });
 }
 
-// Organik Pixel-Art Çimen Detayları
 function drawNaturalGrass(VW, VH) {
-    // NOT: Hareket ederken yüzeyde yanıp sönen/kayan tüm renkli yabani çiçekler,
-    // yoncalar ve kararsız dekorasyonlar göz zevkini bozmaması için tamamen kaldırılmıştır.
-    // Zemin artık tamamen dikişsiz ve stabil çim kaplamasıyla kaplıdır.
 }
 
-// Kayaları gölgeli ve köşeli pixel art tarzında çiz
 function drawRocks(HVW, HVH) {
     if (typeof rocks === 'undefined' || !rocks) return;
 
@@ -263,7 +237,6 @@ function drawRocks(HVW, HVH) {
     });
 }
 
-// Ağaçları muhteşem katmanlı pixel art çam/yaprak ağacı şeklinde çiz
 function drawTrees(HVW, HVH) {
     if (typeof trees === 'undefined' || !trees) return;
 
@@ -279,63 +252,59 @@ function drawTrees(HVW, HVH) {
         
         CTX.fillStyle = 'rgba(0, 0, 0, 0.4)';
         CTX.beginPath();
-        CTX.ellipse(pos.x + 6, pos.y + t.r * 0.4, Math.abs(t.r * 0.8), Math.abs(t.r * 0.3), 0, 0, Math.PI * 2);
+        CTX.ellipse(pos.x, pos.y + t.r * 0.4, t.r * 0.75, t.r * 0.25, 0, 0, Math.PI * 2);
         CTX.fill();
 
-        CTX.fillStyle = '#42240c'; 
-        CTX.fillRect(pos.x - 5, pos.y - t.r * 0.1, 10, t.r * 0.6);
-        CTX.fillStyle = '#261405';
-        CTX.fillRect(pos.x - 5, pos.y - t.r * 0.1, 4, t.r * 0.6);
+        CTX.fillStyle = '#1e0f05';
+        CTX.fillRect(pos.x - 4, pos.y - t.r * 0.1, 8, t.r * 0.6);
+        CTX.fillStyle = '#140b03';
+        CTX.fillRect(pos.x - 4, pos.y - t.r * 0.1, 3, t.r * 0.6);
+        CTX.fillStyle = '#2d1708';
+        CTX.fillRect(pos.x + 2, pos.y - t.r * 0.1, 2, t.r * 0.6);
 
-        const leafColor = t.color || '#1e4c1e';
-        const shadowLeafColor = '#0f2b0f';
-        const lightLeafColor = '#307530';
+        const startY = pos.y + t.r * 0.1;
+        const layers = 4;
         
-        const layers = [
-            { r: t.r * 0.9, yOffset: -t.r * 0.1, h: t.r * 0.65 },
-            { r: t.r * 0.75, yOffset: -t.r * 0.5, h: t.r * 0.55 },
-            { r: t.r * 0.55, yOffset: -t.r * 0.9, h: t.r * 0.45 }
-        ];
-
-        layers.forEach((layer, idx) => {
-            const ly = pos.y + layer.yOffset;
-            if (layer.r <= 0 || layer.h <= 0) return;
+        for (let i = 0; i < layers; i++) {
+            const pct = i / (layers - 1);
+            const lw = t.r * (1.1 - pct * 0.7);
+            const lh = t.r * 0.45;
+            const ly = startY - t.r * 0.4 - pct * (t.r * 0.9);
             
-            CTX.fillStyle = shadowLeafColor;
+            CTX.fillStyle = '#142b16';
             CTX.beginPath();
-            CTX.moveTo(pos.x - layer.r, ly + layer.h * 0.5);
-            CTX.lineTo(pos.x + layer.r, ly + layer.h * 0.5);
-            CTX.lineTo(pos.x, ly - layer.h * 0.5);
-            CTX.closePath();
-            CTX.fill();
-
-            CTX.fillStyle = leafColor;
-            CTX.beginPath();
-            CTX.moveTo(pos.x - layer.r + 3, ly + layer.h * 0.4);
-            CTX.lineTo(pos.x + layer.r - 3, ly + layer.h * 0.4);
-            CTX.lineTo(pos.x, ly - layer.h * 0.4);
-            CTX.closePath();
-            CTX.fill();
-
-            CTX.fillStyle = lightLeafColor;
-            CTX.beginPath();
-            CTX.moveTo(pos.x - layer.r * 0.7, ly + layer.h * 0.1);
-            CTX.lineTo(pos.x, ly + layer.h * 0.2);
-            CTX.lineTo(pos.x, ly - layer.h * 0.4);
+            CTX.moveTo(pos.x - lw - 2, ly + lh * 0.5);
+            CTX.lineTo(pos.x + lw + 2, ly + lh * 0.5);
+            CTX.lineTo(pos.x, ly - lh * 0.5 - 2);
             CTX.closePath();
             CTX.fill();
             
-            CTX.fillStyle = shadowLeafColor;
-            CTX.fillRect(pos.x - layer.r, ly + layer.h * 0.45, 4, 3);
-            CTX.fillRect(pos.x + layer.r - 4, ly + layer.h * 0.45, 4, 3);
-            CTX.fillRect(pos.x - 2, ly + layer.h * 0.45, 4, 3);
-        });
+            CTX.fillStyle = '#1b381d';
+            CTX.beginPath();
+            CTX.moveTo(pos.x - lw, ly + lh * 0.4);
+            CTX.lineTo(pos.x + lw, ly + lh * 0.4);
+            CTX.lineTo(pos.x, ly - lh * 0.5);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.fillStyle = '#224825';
+            CTX.beginPath();
+            CTX.moveTo(pos.x - lw * 0.6, ly + lh * 0.1);
+            CTX.lineTo(pos.x, ly + lh * 0.3);
+            CTX.lineTo(pos.x, ly - lh * 0.4);
+            CTX.closePath();
+            CTX.fill();
+            
+            CTX.fillStyle = '#2e5c33';
+            CTX.fillRect(pos.x - lw + 2, ly + lh * 0.35, 4, 2);
+            CTX.fillRect(pos.x + lw - 6, ly + lh * 0.35, 4, 2);
+            CTX.fillRect(pos.x - 2, ly - lh * 0.1, 4, 2);
+        }
 
         CTX.restore();
     });
 }
 
-// Kamp ateşlerini animasyonlu, çıtırdayan odunlu ve piksellenmiş alev efektleriyle çiz
 function drawCampfires(HVW, HVH) {
     if (typeof campfires === 'undefined' || !campfires) return;
 
@@ -404,7 +373,6 @@ function drawCampfires(HVW, HVH) {
     });
 }
 
-// Barrel (Varil) ve Box (Kutu) objelerini detaylı pikselli dokularla süsle
 function drawProps(HVW, HVH) {
     if (typeof props === 'undefined' || !props) return;
 
@@ -477,7 +445,6 @@ function drawProps(HVW, HVH) {
     });
 }
 
-// Yerden toplanabilir eşyaları pixel art nesnelerine dönüştür
 function drawItems(HVW, HVH) {
     if (typeof items === 'undefined' || !items) return;
 
@@ -553,7 +520,6 @@ function drawItems(HVW, HVH) {
     });
 }
 
-// Düşman mermilerini pikselli, parlayan sihir kürelerine dönüştür
 function drawEnemyBullets(VW, VH) {
     if (typeof eBullets === 'undefined' || !eBullets) return;
 
@@ -578,7 +544,6 @@ function drawEnemyBullets(VW, VH) {
     CTX.restore();
 }
 
-// Düşmanları çok daha şık, detaylı, karanlık fantezi canavarı piksellerine dönüştür
 function drawEnemies(HVW, HVH) {
     if (typeof enemies === 'undefined' || !enemies) return;
 
@@ -697,7 +662,6 @@ function drawEnemies(HVW, HVH) {
     });
 }
 
-// Sarımsak Alanı - Gizemli aura rünleri ve dairesel pikselli dalgalar halinde
 function drawGarlicZone() {
     if (typeof player === 'undefined' || !player || !player.garlic) return;
     const gr = (100 + player.garlic * 28) * charScale;
@@ -732,7 +696,6 @@ function drawGarlicZone() {
     CTX.restore();
 }
 
-// Kalkan Çemberi - Fütüristik parlayan koruma katmanı
 function drawShieldRing() {
     if (typeof player === 'undefined' || !player || !player.shield) return;
     CTX.save();
@@ -756,7 +719,6 @@ function drawShieldRing() {
     CTX.restore();
 }
 
-// Orb'lar (Dönen Sihirli Küreler) - RPG Enerji Kristali Şeklinde
 function drawOrbs() {
     if (typeof player === 'undefined' || !player || !player.orb) return;
     CTX.save();
@@ -778,7 +740,6 @@ function drawOrbs() {
     CTX.restore();
 }
 
-// Dash (Hızlı Atılma) Bekleme Süresi Barı
 function drawDashBar() {
     if (typeof player === 'undefined' || !player || player.dashCd <= 0) return;
     const PR = player.r * charScale;
@@ -793,7 +754,6 @@ function drawDashBar() {
     CTX.restore();
 }
 
-// Oyuncu Karakterini detaylı bir kahraman piksel görünümüne dönüştür
 function drawPlayer() {
     if (typeof player === 'undefined' || !player) return;
     const PR = player.r * charScale;
@@ -858,7 +818,6 @@ function drawPlayer() {
     CTX.restore();
 }
 
-// Oyuncu Mermilerini Parıltılı Pixel Art Büyü Mermilerine Dönüştür
 function drawBullets(VW, VH) {
     if (typeof bullets === 'undefined' || !bullets) return;
 
@@ -894,7 +853,6 @@ function drawBullets(VW, VH) {
     CTX.restore();
 }
 
-// Parçacık (Kan, Kıvılcım vb.) efektlerini keskin piksellere dönüştür
 function drawParticles() {
     if (typeof parts === 'undefined' || !parts) return;
     if (typeof MAP_W === 'undefined' || typeof MAP_H === 'undefined') return;
@@ -919,7 +877,6 @@ function drawParticles() {
     parts = parts.filter(p => p && p.l > 0);
 }
 
-// Hasar Sayıları ve Uçan Yazılar (Retro Arcade Font Görünümüyle)
 function drawFloats() {
     if (typeof floats === 'undefined' || !floats) return;
 
@@ -945,53 +902,27 @@ function drawFloats() {
     floats = floats.filter(f => f && f.l > 0);
 }
 
-// Efsanevi Retro Pixel Art Mini Harita (Dışa Taşmalar Giderildi ve Optimize Edildi)
 function drawMinimap() {
     if (typeof player === 'undefined') return;
 
-    // Harita genişlikleri için güvenli varsayılan değerler
     const safeMapW = (typeof MAP_W !== 'undefined' && MAP_W > 0) ? MAP_W : 4000;
     const safeMapH = (typeof MAP_H !== 'undefined' && MAP_H > 0) ? MAP_H : 4000;
 
-    const MS = 150; // Mini harita boyutu
-    const SC = MS / safeMapW; // Ölçekleme katsayısı
-    const MX = W - MS - 15; // Mini harita X başlangıcı
-    const MY = 65; // Mini harita Y başlangıcı
+    const MS = 150; 
+    const SC = MS / safeMapW; 
+    const MX = W - MS - 15; 
+    const MY = 65; 
     
     CTX.save();
     
-    // Mini harita arka planı
     CTX.fillStyle = 'rgba(5, 12, 5, 0.9)';
     CTX.fillRect(MX, MY, MS, MS);
     
-    // MASKELİ ALAN BAŞLANGICI: Sadece mini harita karesi içerisine çizime izin ver (Taşmaları önler)
     CTX.save();
     CTX.beginPath();
     CTX.rect(MX, MY, MS, MS);
     CTX.clip();
     
-    // 1. Zemin Bölgeleri (Terrain Zones)
-    if (typeof terrainZones !== 'undefined' && terrainZones) {
-        const tc = { 
-            water: '#003366', 
-            sand: '#806633', 
-            ruins: '#3d3d3d', 
-            forest: '#004d00', 
-            lava: '#661100', 
-            snow: '#99b3b3', 
-            swamp: '#14240e' 
-        };
-        
-        terrainZones.forEach(z => {
-            if (!z || z.r <= 0) return;
-            CTX.fillStyle = tc[z.type] || '#1f331f';
-            CTX.beginPath();
-            CTX.arc(MX + z.x * SC, MY + z.y * SC, Math.abs(z.r * SC), 0, Math.PI * 2);
-            CTX.fill();
-        });
-    }
-
-    // 2. Yerdeki Eşyalar (XP, Can İksiri vb.)
     if (typeof items !== 'undefined' && items) {
         CTX.fillStyle = '#00ffff';
         items.forEach(it => {
@@ -1001,7 +932,6 @@ function drawMinimap() {
         });
     }
 
-    // 3. Düşmanlar (Normal ve Boss Sınıfları)
     if (typeof enemies !== 'undefined' && enemies) {
         enemies.forEach(e => {
             if (!e) return;
@@ -1011,26 +941,21 @@ function drawMinimap() {
         });
     }
 
-    // 4. Oyuncu Pozisyonu
     const px = MX + player.x * SC;
     const py = MY + player.y * SC;
     
-    // Oyuncuyu temsil eden parıldayan yeşil hedef imleci
     CTX.fillStyle = '#00ff00';
     CTX.fillRect(px - 3, py, 7, 1);
     CTX.fillRect(px, py - 3, 1, 7);
     CTX.fillStyle = '#ffffff'; 
     CTX.fillRect(px, py, 1, 1);
 
-    // Kırpma maskesini kaldır
     CTX.restore();
 
-    // Mini Harita Çerçevesi (Kırpma maskesinin dışında çiziyoruz ki kenarlar düzgün gözüksün)
     CTX.strokeStyle = '#c49a45';
     CTX.lineWidth = 4;
     CTX.strokeRect(MX - 2, MY - 2, MS + 4, MS + 4);
 
-    // Alt Bilgi Etiket Kutusu
     CTX.fillStyle = '#111';
     CTX.fillRect(MX - 2, MY + MS + 2, MS + 4, 18);
     CTX.strokeStyle = '#c49a45';
