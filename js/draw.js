@@ -1,5 +1,10 @@
 function draw() {
-    CTX.fillStyle = '#0b160b';
+    // Rich layered forest floor gradient
+    const bgGrad = CTX.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.75);
+    bgGrad.addColorStop(0, '#0d1f0d');
+    bgGrad.addColorStop(0.5, '#091408');
+    bgGrad.addColorStop(1, '#040c04');
+    CTX.fillStyle = bgGrad;
     CTX.fillRect(0, 0, W, H);
     CTX.save();
     try {
@@ -34,25 +39,42 @@ function draw() {
 }
 
 const terrainColors = {
-    water: '#00336688', sand: 'rgba(139,115,85,0.22)',
-    ruins: 'rgba(60,60,60,0.25)', forest: 'rgba(20,70,20,0.28)',
-    lava:  'rgba(150,40,0,0.25)', snow:   'rgba(200,220,255,0.18)',
-    swamp: 'rgba(30,60,10,0.25)'
+    water: 'rgba(0,60,120,0.55)',
+    sand:  'rgba(110,90,50,0.30)',
+    ruins: 'rgba(45,55,40,0.35)',
+    forest:'rgba(15,65,15,0.45)',
+    lava:  'rgba(140,35,0,0.30)',
+    snow:  'rgba(180,210,180,0.22)',
+    swamp: 'rgba(20,50,10,0.40)'
 };
 
 function drawTerrain(VW, VH, HVW, HVH) {
     terrainZones.forEach(z => {
         const pos = relPos(z.x, z.y);
         if (Math.abs(pos.x) > HVW + z.r || Math.abs(pos.y) > HVH + z.r) return;
-        const grad = CTX.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, z.r);
-        grad.addColorStop(0, terrainColors[z.type] || 'rgba(50,50,50,0.15)');
+
+        // Outer soft glow
+        const grad = CTX.createRadialGradient(pos.x, pos.y, z.r * 0.2, pos.x, pos.y, z.r);
+        grad.addColorStop(0, terrainColors[z.type] || 'rgba(20,50,20,0.25)');
+        grad.addColorStop(0.6, terrainColors[z.type] || 'rgba(20,50,20,0.12)');
         grad.addColorStop(1, 'transparent');
         CTX.fillStyle = grad;
         CTX.beginPath(); CTX.arc(pos.x, pos.y, z.r, 0, 6.28); CTX.fill();
-        if (Math.abs(pos.x) < VW / 4 && Math.abs(pos.y) < VH / 4) {
-            CTX.save(); CTX.globalAlpha = 0.12; CTX.fillStyle = '#fff';
-            CTX.font = '12px monospace'; CTX.textAlign = 'center';
-            CTX.fillText(z.type.toUpperCase(), pos.x, pos.y); CTX.restore();
+
+        // Inner brighter core for forest zones
+        if (z.type === 'forest') {
+            const core = CTX.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, z.r * 0.45);
+            core.addColorStop(0, 'rgba(30,90,20,0.18)');
+            core.addColorStop(1, 'transparent');
+            CTX.fillStyle = core;
+            CTX.beginPath(); CTX.arc(pos.x, pos.y, z.r * 0.45, 0, 6.28); CTX.fill();
+        }
+        if (z.type === 'water') {
+            const shimmer = CTX.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, z.r * 0.5);
+            shimmer.addColorStop(0, 'rgba(0,100,180,0.22)');
+            shimmer.addColorStop(1, 'transparent');
+            CTX.fillStyle = shimmer;
+            CTX.beginPath(); CTX.arc(pos.x, pos.y, z.r * 0.5, 0, 6.28); CTX.fill();
         }
     });
 }
@@ -77,7 +99,8 @@ function drawRoads(VW, VH) {
 }
 
 function drawGrid(VW, VH) {
-    CTX.strokeStyle = '#121f12'; CTX.lineWidth = 1; CTX.beginPath();
+    // Mossy dirt texture grid
+    CTX.strokeStyle = 'rgba(22,40,16,0.55)'; CTX.lineWidth = 1.5; CTX.beginPath();
     const gs = 110, ox = player.x % gs, oy = player.y % gs;
     for (let x = -VW / 2 - gs; x < VW / 2 + gs; x += gs) {
         const dx = Math.floor((x - ox) / gs) * gs + (gs - ox);
@@ -85,9 +108,22 @@ function drawGrid(VW, VH) {
     }
     for (let y = -VH / 2 - gs; y < VH / 2 + gs; y += gs) {
         const dy = Math.floor((y - oy) / gs) * gs + (gs - oy);
-        CTX.moveTo(-VH / 2, dy); CTX.lineTo(VH / 2, dy);
+        CTX.moveTo(-VW / 2, dy); CTX.lineTo(VW / 2, dy);
     }
     CTX.stroke();
+
+    // Faint secondary grid for depth
+    CTX.strokeStyle = 'rgba(18,32,14,0.28)'; CTX.lineWidth = 0.5; CTX.setLineDash([6,14]); CTX.beginPath();
+    const gs2 = 55, ox2 = player.x % gs2, oy2 = player.y % gs2;
+    for (let x = -VW / 2 - gs2; x < VW / 2 + gs2; x += gs2) {
+        const dx = Math.floor((x - ox2) / gs2) * gs2 + (gs2 - ox2);
+        CTX.moveTo(dx, -VH / 2); CTX.lineTo(dx, VH / 2);
+    }
+    for (let y = -VH / 2 - gs2; y < VH / 2 + gs2; y += gs2) {
+        const dy = Math.floor((y - oy2) / gs2) * gs2 + (gs2 - oy2);
+        CTX.moveTo(-VW / 2, dy); CTX.lineTo(VW / 2, dy);
+    }
+    CTX.stroke(); CTX.setLineDash([]);
 }
 
 function drawLandmarks(HVW, HVH) {
