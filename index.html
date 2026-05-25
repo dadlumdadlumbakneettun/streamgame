@@ -108,20 +108,13 @@
 <div id="start-menu" class="overlay-screen">
     <div id="left-fx"></div>
     <div id="right-fx"></div>
-    <h1 class="vampire-title">ATLASSYA<br>SURVIVAL</h1>
-    <p style="color:#555;margin-bottom:8px;font-size:13px;letter-spacing:2px;">v4.2 — ENHANCED EDITION</p>
     <p id="menu-streamer" style="color:#0f0;font-size:17px;margin-bottom:30px;text-shadow:0 0 10px #0f0;"></p>
-    <button class="big-btn" onclick="init()">▶ OYUNU BAŞLAT</button>
-    <p style="color:#333;margin-top:22px;font-size:12px;letter-spacing:1px;">WASD: Hareket &nbsp;|&nbsp; SPACE: Dash &nbsp;|&nbsp; Q: Bot Dalgası &nbsp;|&nbsp; ESC: Duraklat</p>
-    <p style="color:#2a4a2a;margin-top:8px;font-size:11px;">Chat: 1-10 yazarak düşman çağır!</p>
+    <button class="big-btn" onclick="init()">BAŞLAT</button>
 </div>
 
 <!-- Giriş ekranı -->
 <div id="login-screen">
     <div class="login-box">
-        <div class="login-logo">🎮 KICK SURVIVAL</div>
-        <div class="login-sub">KICK YAYINCI ADI GİR</div>
-
         <div id="login-preview-wrap">
             <img id="login-avatar-preview" src="" alt="">
             <div>
@@ -134,13 +127,12 @@
                autocomplete="off"
                oninput="onStreamerInput()"
                onkeydown="if(event.key==='Enter') doLogin()">
-        <button id="btn-login" onclick="doLogin()">BAĞLAN &amp; BAŞLAT</button>
+        <button id="btn-login" onclick="doLogin()">BAĞLAN</button>
         <div id="login-status"></div>
-        <div class="login-hint">Kick chat'e otomatik bağlanır &nbsp;·&nbsp; 1–10 yazarak düşman çağır</div>
     </div>
 </div>
 
-<div id="log-area">Sistem Hazır.</div>
+<div id="log-area" style="display:none;">Sistem Hazır.</div>
 </div>
 
 <!--
