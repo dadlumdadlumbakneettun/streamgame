@@ -83,7 +83,7 @@ function hitEnemy(e, d, silent = false) {
             dropItem(e.x, e.y, 'xp_big');
             dropItem(e.x, e.y, 'hp');
             dropItem(e.x, e.y, 'shield');
-        } else if (Math.random() < 0.04) {   // reduced from 0.12 — HP drops much rarer
+        } else if (Math.random() < 0.005) {   // very rare HP drops
             dropItem(e.x, e.y, 'hp');
         }
 
