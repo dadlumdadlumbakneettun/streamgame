@@ -58,8 +58,9 @@ async function doLogin() {
         document.getElementById('login-status').innerText = '⚠️ API hatası — varsayılan kullanılıyor';
     }
 
+    imgAvatar.crossOrigin = 'anonymous';
     imgAvatar.onload  = () => bakeAvatar();
-    imgAvatar.onerror = () => {};
+    imgAvatar.onerror = () => { avatarCanvas.width = 0; };
     imgAvatar.src     = streamerPic;
 
     setTimeout(goToStartMenu, 800);
@@ -73,7 +74,12 @@ function bakeAvatar() {
     avatarCtx.beginPath();
     avatarCtx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2);
     avatarCtx.clip();
-    avatarCtx.drawImage(imgAvatar, 0, 0, S, S);
+    try {
+        avatarCtx.drawImage(imgAvatar, 0, 0, S, S);
+    } catch (e) {
+    
+        avatarCanvas.width = 0;
+    }
     avatarCtx.restore();
 }
 
