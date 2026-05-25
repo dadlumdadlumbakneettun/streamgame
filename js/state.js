@@ -16,8 +16,8 @@ const avatarCanvas = document.createElement('canvas');
 const avatarCtx    = avatarCanvas.getContext('2d');
 
 let streamerName = '';
-let streamerPic  = 'https://files.kick.com/images/user/29960048/profile_image/conversion/b79ac22c-5f2e-41a1-acfa-ace08ba63db9-fullsize.webp';
-let chatRoomId   = '28632539';
+let streamerPic  = '';
+let chatRoomId   = '';
 
 let gameActive = false;
 let isPaused   = false;
