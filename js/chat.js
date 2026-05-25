@@ -32,7 +32,6 @@ function handleChat(s, m) {
 
     if (msg.startsWith('!')) notify(n, msg, isMod);
 
-    // Mod komutları
     if (isMod && msg === '!temizle') { enemies = []; return; }
     if (isMod && msg === '!atak') {
         for (let k = 0; k < 12; k++) spawn(n, c, false, false);
@@ -47,15 +46,13 @@ function handleChat(s, m) {
     const num = parseInt(msg);
     const isExactNum = !isNaN(num) && String(num) === msg;
 
-    // Moderatörler: 1–100 arası sayı yazabilir
     if (isMod && isExactNum && num >= 1 && num <= 100) {
-        for (let i = 0; i < num; i++) spawn(n, c, sub, true);
+        for (let i = 0; i < num; i++) spawn(n, c, sub, false);
         notify(n, `${num}× saldırı! (MOD)`, true);
         txt(player.x, player.y - 70, `${n}: ${num}× saldırı!`, c);
         return;
     }
 
-    // Normal izleyiciler: 1–10 arası sayı yazabilir
     if (!isMod && isExactNum && num >= 1 && num <= 10) {
         for (let i = 0; i < num; i++) spawn(n, c, sub, false);
         notify(n, `${num}× saldırı!`, false);
