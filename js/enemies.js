@@ -4,8 +4,10 @@ function spawn(n, c, sub, boss) {
     const sx = wrap(player.x + Math.cos(a) * d, MAP_W);
     const sy = wrap(player.y + Math.sin(a) * d, MAP_H);
 
-    let hp = 32 + Math.floor(player.lvl * 5) + (sub ? 30 : 0);
-    if (boss) hp *= 14;
+    // Aggressively scale HP with level so high-level enemies stay threatening
+    const lvl = player.lvl;
+    let hp = 40 + Math.floor(lvl * 10 + lvl * lvl * 0.9) + (sub ? 70 : 0);
+    if (boss) hp *= 16;
 
     const isRange = !boss && Math.random() < 0.3;
 
@@ -15,7 +17,7 @@ function spawn(n, c, sub, boss) {
         hp: hp, max: hp,
         boss:  boss,
         r:     boss ? 85 : 32,
-        spd:   boss ? 2.2 : (1.4 + Math.random() * 1.8),
+        spd:   boss ? (2.5 + lvl * 0.04) : (1.6 + Math.random() * 1.4 + lvl * 0.06),
         range: isRange,
         frozen: 0, slowed: 0,
         id: eidCounter++
@@ -44,7 +46,7 @@ function spawnQWave() {
     }
     Snd.play('wave');
     txt(player.x, player.y - 70, '🤖 BOT DALGASI!', '#ff4444');
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 20; i++) {
         parts.push({
             x: player.x, y: player.y,
             c: '#ff4444',
@@ -61,7 +63,8 @@ function hitEnemy(e, d, silent = false) {
     e.hp -= dmg;
     player.damageDealt += dmg;
 
-    for (let i = 0; i < 3; i++) {
+    // Fewer particles per hit for performance
+    for (let i = 0; i < 2; i++) {
         parts.push({
             x: e.x, y: e.y, c: e.c,
             vx: (Math.random() - .5) * 6,
@@ -80,7 +83,7 @@ function hitEnemy(e, d, silent = false) {
             dropItem(e.x, e.y, 'xp_big');
             dropItem(e.x, e.y, 'hp');
             dropItem(e.x, e.y, 'shield');
-        } else if (Math.random() < 0.12) {
+        } else if (Math.random() < 0.04) {   // reduced from 0.12 — HP drops much rarer
             dropItem(e.x, e.y, 'hp');
         }
 
