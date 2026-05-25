@@ -15,12 +15,61 @@ const ITEM_CMAP = {
     shield: '#00ffff' 
 };
 
+// Çevrimdışı (Offscreen) Çim Doku Kalıbı Değişkeni
+let grassPattern = null;
+
+// Paylaşılan görsel referans alınarak hazırlanan dikişsiz (seamless) pixel art çim dokusu üretici
+function initGrassPattern() {
+    if (typeof document === 'undefined') return;
+    const pCanvas = document.createElement('canvas');
+    pCanvas.width = 64;
+    pCanvas.height = 64;
+    const pCtx = pCanvas.getContext('2d');
+    
+    // Görseldeki gibi derin koyu orman yeşili taban rengi
+    pCtx.fillStyle = '#1b381d';
+    pCtx.fillRect(0, 0, 64, 64);
+    
+    // Pixel art çim bıçaklarını çizme fonksiyonu (Koyu gölge ve açık yeşil parıltı)
+    const drawGrassBlade = (x, y, h) => {
+        // Gölge pikselleri
+        pCtx.fillStyle = '#142b16';
+        pCtx.fillRect(x, y, 2, h);
+        pCtx.fillRect(x - 2, y + 2, 2, h - 2);
+        pCtx.fillRect(x + 2, y + 1, 2, h - 1);
+        
+        // Işıklı pikseller (Dokuyu hissettiren 2. ana yeşil ton)
+        pCtx.fillStyle = '#224825';
+        pCtx.fillRect(x, y - 2, 2, 2);
+        pCtx.fillRect(x - 2, y, 2, 2);
+        pCtx.fillRect(x + 2, y - 1, 2, 2);
+    };
+    
+    // Seamless (birbirini tekrarlayan) doku için optimize edilmiş çim yerleşim koordinatları
+    const grassCoords = [
+        [4, 8, 10], [16, 24, 8], [28, 4, 12], [40, 18, 9], [52, 10, 11],
+        [10, 40, 9], [22, 52, 11], [36, 36, 10], [48, 48, 8], [58, 32, 12],
+        [2, 56, 8], [14, 12, 10], [26, 28, 9], [38, 50, 11], [50, 2, 10],
+        [8, 22, 11], [20, 44, 8], [32, 16, 12], [44, 58, 9], [56, 20, 10]
+    ];
+    
+    // Kenar taşmalarını sararak kusursuz birleştirme yapalım
+    grassCoords.forEach(([cx, cy, ch]) => {
+        drawGrassBlade(cx, cy, ch);
+        if (cx < 4) drawGrassBlade(cx + 64, cy, ch);
+        if (cx > 60) drawGrassBlade(cx - 64, cy, ch);
+        if (cy < 4) drawGrassBlade(cx, cy + 64, ch);
+        if (cy > 60) drawGrassBlade(cx, cy - 64, ch);
+    });
+    
+    grassPattern = CTX.createPattern(pCanvas, 'repeat');
+}
+
 // Çizim fonksiyonlarının herhangi birinde hata oluşsa bile oyunun donmasını engelleyen güvenli sarmalayıcı
 function safeDraw(drawFn, name) {
     try {
         drawFn();
     } catch (e) {
-        // Hata konsola yazdırılır ancak oyunun çizimi ve akışı asla kesintiye uğramaz
         console.warn(`Çizim Hatası [${name}]:`, e);
     }
 }
@@ -28,8 +77,13 @@ function safeDraw(drawFn, name) {
 function draw() {
     if (typeof CTX === 'undefined' || !CTX) return;
 
-    // Derin ve piksellenmiş orman tabanı arka plan rengi (Daha taze bir çimen tonuyla güncellendi)
-    CTX.fillStyle = '#0a1a0c';
+    // Çim kalıbı ilk kez çalışıyorsa hafızaya al
+    if (!grassPattern) {
+        initGrassPattern();
+    }
+
+    // fallback düz arka plan
+    CTX.fillStyle = '#1b381d';
     CTX.fillRect(0, 0, W, H);
     
     // zoomLevel değerinin tanımsız, 0 veya negatif olma ihtimaline karşı güvenlik bariyeri
@@ -41,11 +95,24 @@ function draw() {
         CTX.scale(safeZoom, safeZoom);
         
         const VW = W / safeZoom, VH = H / safeZoom;
-        const HVW = VW / 2 + 80, HVH = VH / 2 + 80; // Görüş alanı dışı eleme marjı
+        const HVW = VW / 2 + 80, HVH = VH / 2 + 80; 
 
-        // KATMANLI GÜVENLİ ÇİZİM SIRASI (Landmarks ve Grid Çizgileri kaldırıldı!)
-        safeDraw(() => drawTerrain(VW, VH, HVW, HVH), "Zemin Bölgeleri");
-        safeDraw(() => drawNaturalGrass(VW, VH), "Organik Pixel Çimen ve Çiçek Örtüsü");
+        // Kalıbı oyuncunun koordinatlarına göre kaydırarak dünyada sabit kalmasını sağlayalım (Kayma hissini önler)
+        if (grassPattern && typeof player !== 'undefined' && player) {
+            const matrix = new DOMMatrix();
+            matrix.translateSelf(-player.x, -player.y);
+            grassPattern.setTransform(matrix);
+        }
+
+        // KATMANLI GÜVENLİ ÇİZİM SIRASI (Büyük renkli yuvarlaklar ve Landmarks tamamen temizlendi!)
+        safeDraw(() => {
+            if (grassPattern) {
+                CTX.fillStyle = grassPattern;
+                CTX.fillRect(-VW/2 - 80, -VH/2 - 80, VW + 160, VH + 160);
+            }
+        }, "Dikişsiz Doğal Çim Kaplaması");
+        
+        safeDraw(() => drawNaturalGrass(VW, VH), "Organik Pixel Detaylar");
         safeDraw(() => drawRoads(VW, VH), "Yollar");
         safeDraw(() => drawRocks(HVW, HVH), "Kayalar");
         safeDraw(() => drawTrees(HVW, HVH), "Ağaçlar");
@@ -70,7 +137,7 @@ function draw() {
     safeDraw(() => drawMinimap(), "Mini Harita");
 }
 
-// Detaylı pixel art arazi renk paletleri (Orman ve yeşillik dokuları geliştirildi)
+// Arazilerin sadece koordinat tabanlı mini harita temsili için renk paletleri
 const terrainColors = {
     water:  { main: '#004c8c', light: '#0073b3', dark: '#00264d', accent: '#33ccff' },
     sand:   { main: '#bfa15f', light: '#d9c58c', dark: '#8c6b30', accent: '#f2e5b1' },
@@ -81,75 +148,9 @@ const terrainColors = {
     swamp:  { main: '#1c2e15', light: '#2c4721', dark: '#0e1a0a', accent: '#3e632e' }
 };
 
-// Arazileri detaylı pixel art dokularıyla çiz
+// drawTerrain fonksiyonunun içi boşaltıldı - Ana haritadaki renkli yuvarlaklar tamamen kalktı!
 function drawTerrain(VW, VH, HVW, HVH) {
-    if (typeof terrainZones === 'undefined' || !terrainZones) return;
-
-    const safeHVW = Math.min(HVW, 2000);
-    const safeHVH = Math.min(HVH, 2000);
-
-    terrainZones.forEach(z => {
-        if (!z || z.r <= 0) return;
-        const pos = relPos(z.x, z.y);
-        if (Math.abs(pos.x) > safeHVW + z.r || Math.abs(pos.y) > safeHVH + z.r) return;
-
-        const colors = terrainColors[z.type] || terrainColors.forest;
-        
-        // Arazi taban dairesi
-        CTX.fillStyle = colors.main;
-        CTX.beginPath();
-        CTX.arc(pos.x, pos.y, Math.abs(z.r), 0, Math.PI * 2);
-        CTX.fill();
-
-        // Pixel Art Tarzı Tırtıklı Kenarlık (Dithering Simülasyonu)
-        CTX.save();
-        CTX.strokeStyle = colors.dark;
-        CTX.lineWidth = 6;
-        CTX.setLineDash([8, 12, 4, 16]); 
-        CTX.beginPath();
-        CTX.arc(pos.x, pos.y, Math.max(0.1, Math.abs(z.r - 3)), 0, Math.PI * 2);
-        CTX.stroke();
-        CTX.restore();
-
-        // Bölgeye özel İç Pixel Art Doku Elemanları
-        const seed = Math.floor(z.x + z.y);
-        const detailCount = 14;
-        
-        CTX.save();
-        for (let i = 0; i < detailCount; i++) {
-            const angle = ((seed * (i + 1) * 123.45) % 360) * Math.PI / 180;
-            const dist = ((seed * (i + 5) * 67.89) % (z.r * 0.8));
-            const px = pos.x + Math.cos(angle) * dist;
-            const py = pos.y + Math.sin(angle) * dist;
-
-            CTX.fillStyle = (i % 3 === 0) ? colors.light : ((i % 3 === 1) ? colors.accent : colors.dark);
-            
-            if (z.type === 'water') {
-                CTX.fillRect(px - 6, py, 12, 3);
-                CTX.fillRect(px - 2, py - 3, 4, 3);
-            } else if (z.type === 'lava') {
-                CTX.fillRect(px - 3, py - 3, 6, 6);
-                CTX.fillStyle = '#fff';
-                CTX.fillRect(px - 1, py - 1, 2, 2);
-            } else if (z.type === 'forest' || z.type === 'swamp') {
-                CTX.fillRect(px, py, 3, 9);
-                CTX.fillRect(px - 3, py + 3, 3, 6);
-                CTX.fillRect(px + 3, py + 3, 3, 6);
-            } else if (z.type === 'snow') {
-                CTX.fillRect(px - 2, py - 2, 5, 5);
-                CTX.fillStyle = '#fff';
-                CTX.fillRect(px, py - 4, 1, 9);
-                CTX.fillRect(px - 4, py, 9, 1);
-            } else if (z.type === 'ruins') {
-                CTX.fillRect(px - 5, py - 2, 10, 4);
-                CTX.fillStyle = colors.dark;
-                CTX.fillRect(px - 5, py + 2, 10, 1);
-            } else {
-                CTX.fillRect(px - 2, py - 2, 4, 4);
-            }
-        }
-        CTX.restore();
-    });
+    // Ana haritadaki renkli daireler kaldırıldı. İstek doğrultusunda temiz çim dokusu aktiftir.
 }
 
 // Yolları piksellenmiş parke taşı veya toprak yol görünümüne kavuştur
@@ -201,14 +202,13 @@ function drawRoads(VW, VH) {
     });
 }
 
-// Yeni Geliştirilen Organik Pixel-Art Çimen, Yonca ve Yabani Çiçek Örtüsü
+// Organik Pixel-Art Çimen Detayları (Çim tabanı üstüne serpilen canlılar)
 function drawNaturalGrass(VW, VH) {
     const safeVW = Math.min(VW, 3000);
     const safeVH = Math.min(VH, 3000);
 
     CTX.save();
     
-    // Tiling/Izgara hücresi mantığında çalışır ancak çizgiler çizmez, sadece içerisine organik bitki çizimleri yerleştirir
     const cellSize = 64; 
     const ox = player.x % cellSize;
     const oy = player.y % cellSize;
@@ -219,71 +219,48 @@ function drawNaturalGrass(VW, VH) {
         for (let y = -safeVH / 2 - cellSize; y < safeVH / 2 + cellSize; y += cellSize) {
             const dy = Math.floor((y - oy) / cellSize) * cellSize + (cellSize - oy);
             
-            // Ekran dışındaysa çizmeyi atla (Performans culling)
             if (Math.abs(dx) > safeVW / 2 + 50 || Math.abs(dy) > safeVH / 2 + 50) continue;
             
-            // Sabit ve deterministik rastgelelik üretimi (Tohum / Seed hashing)
             const seed = Math.abs(Math.sin(dx * 12.9898 + dy * 78.233)) * 43758.5453;
-            const itemType = Math.floor(seed) % 15; 
+            const itemType = Math.floor(seed) % 18; // Sıklık azaltılarak sadece detay çiçek/yoncalar bırakıldı
             
-            // Konumda hafif pikselsel doğallık için ofset ekleme
             const px = dx + Math.floor((seed % 10) * 2) - 10;
             const py = dy + Math.floor(((seed >> 2) % 10) * 2) - 10;
             
-            if (itemType === 0 || itemType === 1) {
-                // 1. Tip: Klasik Piksel Çimen Demeti (3 dal yeşil yaprak)
-                CTX.fillStyle = '#1e4c1e'; // Koyu yeşil
-                CTX.fillRect(px, py - 4, 2, 8);
-                CTX.fillRect(px - 2, py - 1, 2, 5);
-                CTX.fillRect(px + 2, py - 2, 2, 6);
-                
-                CTX.fillStyle = '#307530'; // Işıklı yeşil üst kısımlar
-                CTX.fillRect(px, py - 6, 2, 2);
-                CTX.fillRect(px - 2, py - 3, 2, 2);
-                CTX.fillRect(px + 2, py - 4, 2, 2);
-                
-            } else if (itemType === 2) {
-                // 2. Tip: Üç Yapraklı Yonca (Clover)
+            if (itemType === 1) {
+                // Üç Yapraklı Yonca (Clover)
                 CTX.fillStyle = '#225a22';
                 CTX.fillRect(px - 2, py - 2, 2, 2);
                 CTX.fillRect(px + 1, py - 2, 2, 2);
                 CTX.fillRect(px - 1, py + 1, 3, 2);
-                CTX.fillStyle = '#489648'; // Parlak yaprak ucu
+                CTX.fillStyle = '#489648'; 
                 CTX.fillRect(px - 1, py - 1, 1, 1);
                 CTX.fillRect(px + 1, py - 1, 1, 1);
                 CTX.fillRect(px, py, 1, 1);
                 
-            } else if (itemType === 3) {
-                // 3. Tip: Minik Yabani Mavi Çiçekler
-                CTX.fillStyle = '#143814'; // Çiçeğin ot tabanı
+            } else if (itemType === 2) {
+                // Minik Yabani Mavi Çiçekler
+                CTX.fillStyle = '#143814'; 
                 CTX.fillRect(px - 2, py, 5, 3);
                 CTX.fillRect(px, py - 2, 1, 4);
                 
-                CTX.fillStyle = '#33ccff'; // Mavi taç yapraklar
+                CTX.fillStyle = '#33ccff'; 
                 CTX.fillRect(px - 2, py - 4, 2, 2);
                 CTX.fillRect(px + 1, py - 4, 2, 2);
                 CTX.fillRect(px - 1, py - 6, 3, 2);
-                CTX.fillStyle = '#ffffff'; // Beyaz çiçek merkezi
+                CTX.fillStyle = '#ffffff'; 
                 CTX.fillRect(px, py - 4, 1, 1);
                 
-            } else if (itemType === 4) {
-                // 4. Tip: Minik Yabani Sarı Çiçek
+            } else if (itemType === 3) {
+                // Minik Yabani Sarı Çiçek
                 CTX.fillStyle = '#113311';
                 CTX.fillRect(px - 1, py - 1, 3, 4);
                 
-                CTX.fillStyle = '#ffd700'; // Altın sarısı çiçek yaprağı
+                CTX.fillStyle = '#ffd700'; 
                 CTX.fillRect(px - 2, py - 3, 5, 2);
                 CTX.fillRect(px - 1, py - 4, 3, 1);
-                CTX.fillStyle = '#ffffff'; // Merkez
+                CTX.fillStyle = '#ffffff'; 
                 CTX.fillRect(px, py - 3, 1, 1);
-                
-            } else if (itemType === 5) {
-                // 5. Tip: Nemli Yosun Taşları (Minik dairesel gri taş öbekleri)
-                CTX.fillStyle = '#3d453d';
-                CTX.fillRect(px - 3, py + 1, 6, 3);
-                CTX.fillRect(px - 1, py - 1, 3, 2);
-                CTX.fillStyle = '#1a331a'; // Taşın üstüne binen yosun pikselleri
-                CTX.fillRect(px - 2, py, 4, 1);
             }
         }
     }
@@ -599,7 +576,7 @@ function drawItems(HVW, HVH) {
             CTX.fillStyle = '#ff3333';
             CTX.fillRect(pos.x - 5, pos.y - 4, 4, 3);
             CTX.fillRect(pos.x + 1, pos.y - 4, 4, 3);
-            CTX.fillRect(pos.x - 6, py - 1, 12, 3); // Düzeltilmiş koordinat güvencesi
+            CTX.fillRect(pos.x - 6, pos.y - 1, 12, 3); 
             CTX.fillRect(pos.x - 4, pos.y + 2, 8, 3);
             CTX.fillRect(pos.x - 2, pos.y + 5, 4, 2);
             CTX.fillStyle = '#ffffff';
@@ -963,7 +940,7 @@ function drawBullets(VW, VH) {
                 CTX.fillStyle = '#00ffff';
                 CTX.fillRect(pos.x - 5, pos.y - 5, 10, 10);
                 CTX.fillStyle = '#ffffff';
-                CTX.fillRect(pos.x - 2, pos.y - 2, 4, 4);
+                CTX.fillRect(pos.x - 2, py - 2, 4, 4);
             } else {
                 CTX.fillStyle = '#e6b800';
                 CTX.fillRect(pos.x - 5, pos.y - 5, 10, 10);
