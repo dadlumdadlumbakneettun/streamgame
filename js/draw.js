@@ -6,6 +6,15 @@ if (typeof CTX !== 'undefined' && CTX) {
     CTX.msImageSmoothingEnabled = false;
 }
 
+// Eşya ve XP renk haritası - Çizimlerin çökmesini engelleyen kritik tanım
+const ITEM_CMAP = { 
+    xp: '#00bfff', 
+    xp_big: '#00ffff', 
+    hp: '#f55', 
+    mag: '#ffff00', 
+    shield: '#00ffff' 
+};
+
 // Çizim fonksiyonlarının herhangi birinde hata oluşsa bile oyunun donmasını engelleyen güvenli sarmalayıcı
 function safeDraw(drawFn, name) {
     try {
@@ -81,7 +90,7 @@ function drawTerrain(VW, VH, HVW, HVH) {
     const safeHVH = Math.min(HVH, 2000);
 
     terrainZones.forEach(z => {
-        if (!z) return;
+        if (!z || z.r <= 0) return;
         const pos = relPos(z.x, z.y);
         if (Math.abs(pos.x) > safeHVW + z.r || Math.abs(pos.y) > safeHVH + z.r) return;
 
@@ -90,7 +99,7 @@ function drawTerrain(VW, VH, HVW, HVH) {
         // Arazi taban dairesi
         CTX.fillStyle = colors.main;
         CTX.beginPath();
-        CTX.arc(pos.x, pos.y, z.r, 0, Math.PI * 2);
+        CTX.arc(pos.x, pos.y, Math.abs(z.r), 0, Math.PI * 2);
         CTX.fill();
 
         // Pixel Art Tarzı Tırtıklı Kenarlık (Dithering Simülasyonu)
@@ -99,7 +108,7 @@ function drawTerrain(VW, VH, HVW, HVH) {
         CTX.lineWidth = 6;
         CTX.setLineDash([8, 12, 4, 16]); 
         CTX.beginPath();
-        CTX.arc(pos.x, pos.y, z.r - 3, 0, Math.PI * 2);
+        CTX.arc(pos.x, pos.y, Math.max(0.1, Math.abs(z.r - 3)), 0, Math.PI * 2);
         CTX.stroke();
         CTX.restore();
 
@@ -214,7 +223,7 @@ function drawGrid(VW, VH) {
     }
     for (let y = -safeVH / 2 - gs; y < safeVH / 2 + gs; y += gs) {
         const dy = Math.floor((y - oy) / gs) * gs + (gs - oy);
-        CTX.moveTo(-safeVW / 2, dy); CTX.lineTo(safeVW / 2, dy); // Yatay çizgi hizalama hatası düzeltildi
+        CTX.moveTo(-safeVW / 2, dy); CTX.lineTo(safeVW / 2, dy); 
     }
     CTX.stroke();
     
@@ -243,7 +252,7 @@ function drawLandmarks(HVW, HVH) {
     const safeHVH = Math.min(HVH, 2000);
 
     landmarks.forEach(lm => {
-        if (!lm) return;
+        if (!lm || lm.r <= 0) return;
         const pos = relPos(lm.x, lm.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -252,12 +261,12 @@ function drawLandmarks(HVW, HVH) {
         CTX.lineWidth = 2;
         CTX.setLineDash([6, 10, 2, 8]);
         CTX.beginPath();
-        CTX.arc(pos.x, pos.y, lm.r, 0, Math.PI * 2);
+        CTX.arc(pos.x, pos.y, Math.abs(lm.r), 0, Math.PI * 2);
         CTX.stroke();
 
         CTX.fillStyle = 'rgba(164, 132, 255, 0.05)';
         CTX.beginPath();
-        CTX.arc(pos.x, pos.y, lm.r, 0, Math.PI * 2);
+        CTX.arc(pos.x, pos.y, Math.abs(lm.r), 0, Math.PI * 2);
         CTX.fill();
 
         CTX.fillStyle = '#4b3d61';
@@ -285,7 +294,7 @@ function drawRocks(HVW, HVH) {
     const safeHVH = Math.min(HVH, 2000);
 
     rocks.forEach(r => {
-        if (!r) return;
+        if (!r || r.r <= 0) return;
         const pos = relPos(r.x, r.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -293,7 +302,7 @@ function drawRocks(HVW, HVH) {
         
         CTX.fillStyle = 'rgba(0,0,0,0.45)';
         CTX.beginPath();
-        CTX.ellipse(pos.x + r.r * 0.15, pos.y + r.r * 0.4, r.r, r.r * 0.45, 0, 0, Math.PI * 2);
+        CTX.ellipse(pos.x + r.r * 0.15, pos.y + r.r * 0.4, Math.abs(r.r), Math.abs(r.r * 0.45), 0, 0, Math.PI * 2);
         CTX.fill();
 
         CTX.fillStyle = r.c || '#666'; 
@@ -338,7 +347,7 @@ function drawTrees(HVW, HVH) {
     const safeHVH = Math.min(HVH, 2000);
 
     trees.forEach(t => {
-        if (!t) return;
+        if (!t || t.r <= 0) return;
         const pos = relPos(t.x, t.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
@@ -346,7 +355,7 @@ function drawTrees(HVW, HVH) {
         
         CTX.fillStyle = 'rgba(0, 0, 0, 0.4)';
         CTX.beginPath();
-        CTX.ellipse(pos.x + 6, pos.y + t.r * 0.4, t.r * 0.8, t.r * 0.3, 0, 0, Math.PI * 2);
+        CTX.ellipse(pos.x + 6, pos.y + t.r * 0.4, Math.abs(t.r * 0.8), Math.abs(t.r * 0.3), 0, 0, Math.PI * 2);
         CTX.fill();
 
         CTX.fillStyle = '#42240c'; 
@@ -366,6 +375,7 @@ function drawTrees(HVW, HVH) {
 
         layers.forEach((layer, idx) => {
             const ly = pos.y + layer.yOffset;
+            if (layer.r <= 0 || layer.h <= 0) return;
             
             CTX.fillStyle = shadowLeafColor;
             CTX.beginPath();
@@ -413,7 +423,6 @@ function drawCampfires(HVW, HVH) {
         const pos = relPos(c.x, c.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
-        // Zamanlayıcı tanımsız ise güvenle sıfırla (NaN kilitlenmesini engeller)
         if (typeof c.t === 'undefined' || isNaN(c.t)) c.t = 0;
         c.t++;
         const animState = Math.floor(c.t * 0.15) % 4; 
@@ -657,13 +666,19 @@ function drawEnemies(HVW, HVH) {
         const pos = relPos(e.x, e.y);
         if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
         
-        const ER = e.r * charScale;
+        const ER = Math.max(0.1, e.r * charScale);
         CTX.save();
 
         CTX.fillStyle = 'rgba(0, 0, 0, 0.45)';
         CTX.beginPath();
-        CTX.ellipse(pos.x, pos.y + ER * 0.8, ER * 0.8, ER * 0.3, 0, 0, Math.PI * 2);
-        CTX.fill();
+        
+        // Negatif yarıçap hatasına karşı ellipse koruması
+        const rx = ER * 0.8;
+        const ry = ER * 0.3;
+        if (rx > 0 && ry > 0) {
+            CTX.ellipse(pos.x, pos.y + ER * 0.8, rx, ry, 0, 0, Math.PI * 2);
+            CTX.fill();
+        }
 
         if (e.frozen > 0) {
             CTX.fillStyle = '#00ffff';
@@ -678,7 +693,6 @@ function drawEnemies(HVW, HVH) {
             CTX.stroke();
         }
 
-        // Görsel tanımlarının eksik olması/isimlendirme farklılığı ihtimaline karşı güvenli kontrol
         const img = e.range ? 
             (typeof imgRanged !== 'undefined' ? imgRanged : null) : 
             (typeof imgMelee !== 'undefined' ? imgMelee : null);
@@ -749,7 +763,11 @@ function drawEnemies(HVW, HVH) {
         CTX.fillStyle = '#140505';
         CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw, 4);
         
-        const pct = (typeof e.hp !== 'undefined' && typeof e.max !== 'undefined') ? (e.hp / e.max) : 1.0;
+        // can oranı tavan limitleri sıfırlama güvenliği
+        let pct = (typeof e.hp !== 'undefined' && typeof e.max !== 'undefined' && e.max > 0) ? (e.hp / e.max) : 1.0;
+        if (isNaN(pct) || !isFinite(pct)) pct = 0;
+        pct = Math.max(0, Math.min(1, pct));
+        
         CTX.fillStyle = e.boss ? '#e60000' : (pct > 0.5 ? '#00e64d' : '#ff5500');
         CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw * pct, 4);
         
@@ -761,6 +779,7 @@ function drawEnemies(HVW, HVH) {
 function drawGarlicZone() {
     if (typeof player === 'undefined' || !player || !player.garlic) return;
     const gr = (100 + player.garlic * 28) * charScale;
+    if (gr <= 0) return;
     
     CTX.save();
     CTX.strokeStyle = 'rgba(230, 230, 0, 0.35)';
@@ -798,6 +817,7 @@ function drawShieldRing() {
     
     const PR = player.r * charScale;
     const radius = PR + 10;
+    if (radius <= 0) return;
     
     CTX.strokeStyle = '#00ffff';
     CTX.lineWidth = 3;
@@ -855,20 +875,25 @@ function drawDashBar() {
 function drawPlayer() {
     if (typeof player === 'undefined' || !player) return;
     const PR = player.r * charScale;
+    if (PR <= 0) return;
     
     CTX.save();
     
     CTX.fillStyle = 'rgba(0,0,0,0.5)';
     CTX.beginPath();
-    CTX.ellipse(0, PR * 0.7, PR * 0.8, PR * 0.3, 0, 0, Math.PI * 2);
-    CTX.fill();
+    
+    const rx = PR * 0.8;
+    const ry = PR * 0.3;
+    if (rx > 0 && ry > 0) {
+        CTX.ellipse(0, PR * 0.7, rx, ry, 0, 0, Math.PI * 2);
+        CTX.fill();
+    }
     
     const shouldDraw = player.invul <= 0 || frame % 8 < 4;
     
     if (shouldDraw) {
         let avatarDrawn = false;
         
-        // Avatar tanımlarının güvenli kontrolü
         const hasAvatarCanvas = (typeof avatarCanvas !== 'undefined' && avatarCanvas && avatarCanvas.width > 0);
         const hasImgAvatar = (typeof imgAvatar !== 'undefined' && imgAvatar && imgAvatar.complete && imgAvatar.naturalWidth > 0);
         const avatarSrc = hasAvatarCanvas ? avatarCanvas : (hasImgAvatar ? imgAvatar : null);
@@ -1022,10 +1047,10 @@ function drawMinimap() {
     };
     
     terrainZones.forEach(z => {
-        if (!z) return;
+        if (!z || z.r <= 0) return;
         CTX.fillStyle = tc[z.type] || '#1f331f';
         CTX.beginPath();
-        CTX.arc(MX + z.x * SC, MY + z.y * SC, z.r * SC, 0, Math.PI * 2);
+        CTX.arc(MX + z.x * SC, MY + z.y * SC, Math.abs(z.r * SC), 0, Math.PI * 2);
         CTX.fill();
     });
 
