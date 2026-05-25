@@ -14,7 +14,6 @@ function init() {
     document.getElementById('start-menu').style.display        = 'none';
     document.getElementById('streamer-hud').style.display      = 'flex';
     document.getElementById('kills-row').style.display         = 'flex';
-    document.getElementById('q-hint').style.display            = 'block';
 
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
 
