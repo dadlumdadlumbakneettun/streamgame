@@ -1,32 +1,34 @@
-zfunction draw() {
+function draw() {
     CTX.fillStyle = '#0b160b';
     CTX.fillRect(0, 0, W, H);
     CTX.save();
-    CTX.translate(W / 2, H / 2);
-    CTX.scale(zoomLevel, zoomLevel);
-    const VW = W / zoomLevel, VH = H / zoomLevel;
+    try {
+        CTX.translate(W / 2, H / 2);
+        CTX.scale(zoomLevel, zoomLevel);
+        const VW = W / zoomLevel, VH = H / zoomLevel;
 
-    drawTerrain(VW, VH);
-    drawRoads(VW, VH);
-    drawGrid(VW, VH);
-    drawLandmarks(VW, VH);
-    drawRocks(VW, VH);
-    drawTrees(VW, VH);
-    drawCampfires(VW, VH);
-    drawProps(VW, VH);
-    drawItems(VW, VH);
-    drawEnemyBullets(VW, VH);
-    drawEnemies(VW, VH);
-    drawGarlicZone();
-    drawShieldRing();
-    drawOrbs();
-    drawDashBar();
-    drawPlayer();
-    drawBullets(VW, VH);
-    drawParticles();
-    drawFloats();
-
-    CTX.restore();
+        drawTerrain(VW, VH);
+        drawRoads(VW, VH);
+        drawGrid(VW, VH);
+        drawLandmarks(VW, VH);
+        drawRocks(VW, VH);
+        drawTrees(VW, VH);
+        drawCampfires(VW, VH);
+        drawProps(VW, VH);
+        drawItems(VW, VH);
+        drawEnemyBullets(VW, VH);
+        drawEnemies(VW, VH);
+        drawGarlicZone();
+        drawShieldRing();
+        drawOrbs();
+        drawDashBar();
+        drawPlayer();
+        drawBullets(VW, VH);
+        drawParticles();
+        drawFloats();
+    } finally {
+        CTX.restore();
+    }
     drawMinimap();
 }
 
@@ -280,10 +282,15 @@ function drawPlayer() {
     const avatarSrc = avatarCanvas.width > 0 ? avatarCanvas : (imgAvatar.complete && imgAvatar.naturalWidth > 0 ? imgAvatar : null);
     if (avatarSrc) {
         CTX.save();
-        CTX.beginPath(); CTX.arc(0, 0, PR, 0, Math.PI * 2); CTX.clip();
-        CTX.globalAlpha = (player.invul > 0 && frame % 8 >= 4) ? 0.3 : 0.88;
-        CTX.drawImage(avatarSrc, -PR, -PR, PR * 2, PR * 2);
-        CTX.restore();
+        try {
+            CTX.beginPath(); CTX.arc(0, 0, PR, 0, Math.PI * 2); CTX.clip();
+            CTX.globalAlpha = (player.invul > 0 && frame % 8 >= 4) ? 0.3 : 0.88;
+            CTX.drawImage(avatarSrc, -PR, -PR, PR * 2, PR * 2);
+        } catch (e) {
+            avatarCanvas.width = 0;
+        } finally {
+            CTX.restore(); 
+        }
     }
 
     CTX.save();
