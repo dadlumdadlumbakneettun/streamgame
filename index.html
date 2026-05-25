@@ -101,7 +101,7 @@
     <button class="big-btn" onclick="init()">BAŞLAT</button>
 </div>
 
-<div id="login-screen" style="display: flex; flex-direction: row; gap: 30px; justify-content: center; align-items: center; background: rgba(0,0,0,0.95); width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 9999;">
+<div id="login-screen" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center;">
     <div class="login-box" style="margin: 0;">
         <div id="login-preview-wrap">
             <img id="login-avatar-preview" src="" alt="">
@@ -118,8 +118,7 @@
         <div id="login-status"></div>
     </div>
 
-    <div id="suggested-streamers" style="background: #111; border: 2px solid #222; border-radius: 12px; padding: 25px; width: 320px; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.7);">
-        <h3 style="margin: 0 0 5px 0; color: #53fc18; font-size: 16px; border-bottom: 2px solid #222; padding-bottom: 10px; text-align: center; font-weight: bold; letter-spacing: 1.5px;">ÖNERİLEN YAYINCILAR</h3>
+    <div id="suggested-streamers" style="position: absolute; right: 60px; top: 50%; transform: translateY(-50%); width: 280px; display: flex; flex-direction: column; gap: 15px; font-family: sans-serif;">
         <div id="streamers-list" style="display: flex; flex-direction: column; gap: 12px;">
             <div style="text-align: center; color: #666; font-size: 13px;">Yayıncılar yükleniyor...</div>
         </div>
