@@ -23,16 +23,6 @@ function updateHUD() {
         document.getElementById('boss-hpbar-wrap').style.display = 'none';
     }
 
-    const qHint = document.getElementById('q-hint');
-    if (qWaveCd <= 0) {
-        qHint.style.borderColor = '#ff4444';
-        qHint.style.color       = '#ff4444';
-        qHint.innerText         = '[Q] — BOT DALGASI ÇAĞIR';
-    } else {
-        qHint.style.borderColor = '#555';
-        qHint.style.color       = '#555';
-        qHint.innerText         = `[Q] — ${Math.ceil(qWaveCd / 60)}s bekleniyor`;
-    }
 }
 
 function levelUp() {
@@ -60,7 +50,7 @@ function levelUp() {
         { t:'TOP HIZI',        d:'Toplar daha hızlı döner',               i:'💫', r:'common',    f:()=>{ player.orbSpd+=0.06; } },
         { t:'TOP SAYISI',      d:'+1 Yörünge topu',                       i:'🔮', r:'legendary', f:()=>{ player.orb++; } },
         { t:'TOP MENZİLİ',     d:'Toplar daha geniş yörüngede döner',    i:'🌀', r:'rare',      f:()=>{ player.orbRange+=30; } },
-        { t:'SARIMSAK',        d:'Alan hasarı & yarıçap artar',           i:'🧄', r:'epic',      f:()=>{ player.garlicDmg+=7; player.garlic++; } },
+
         { t:'RÜZGAR',          d:'Hareket hızı artar',                    i:'👟', r:'common',    f:()=>{ player.spd+=1.2; } },
         { t:'ATILMA',          d:'Dash bekleme süresi kısalır',           i:'💨', r:'rare',      f:()=>{ player.maxDashCd=Math.max(60,player.maxDashCd-35); } },
         { t:'ÇOKLU NAMLU',     d:'+1 Aynı anda atılan mermi',            i:'💥', r:'legendary', f:()=>{ player.multi++; } },
