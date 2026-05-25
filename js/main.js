@@ -116,15 +116,7 @@ function update() {
         }
     }
 
-    if (player.garlic > 0) {
-        const gr = 100 + player.garlic * 28;
-        for (let i = eBullets.length - 1; i >= 0; i--)
-            if (wdist(player.x, player.y, eBullets[i].x, eBullets[i].y) < gr) eBullets.splice(i, 1);
-        if (frame % 18 === 0)
-            for (let i = enemies.length - 1; i >= 0; i--)
-                if (wdist(player.x, player.y, enemies[i].x, enemies[i].y) < gr) hitEnemy(enemies[i], player.garlicDmg, true);
-    }
-
+    // Orb damage
     if (player.orb > 0) {
         orbAng += player.orbSpd;
         for (let i = 0; i < player.orb; i++) {
@@ -153,7 +145,7 @@ function update() {
                 if (b.explosive) {
                     for (let j = enemies.length - 1; j >= 0; j--)
                         if (enemies[j] !== e && wdist(b.x, b.y, enemies[j].x, enemies[j].y) < 90) hitEnemy(enemies[j], dmg * 0.6, true);
-                    for (let p = 0; p < 25; p++) parts.push({ x:b.x, y:b.y, c:'#ff6600', vx:(Math.random()-.5)*8, vy:(Math.random()-.5)*8, l:25, sz:3 });
+                    for (let p = 0; p < 12; p++) parts.push({ x:b.x, y:b.y, c:'#ff6600', vx:(Math.random()-.5)*8, vy:(Math.random()-.5)*8, l:25, sz:3 });
                 }
                 if (b.bounce && b.bounced < 2) { b.bounced++; b.vx=-b.vx*(0.8+Math.random()*0.4); b.vy=-b.vy*(0.8+Math.random()*0.4); hit=false; }
                 else hit = true;
@@ -176,6 +168,10 @@ function update() {
         if (hit || b.life <= 0) bullets.splice(i, 1);
     }
 
+    // Enemy contact damage scales with level
+    const baseMelee = 0.5 + player.lvl * 0.02;
+    const baseBoss  = 0.8 + player.lvl * 0.04;
+
     for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i]; if (!e) continue;
         if (e.frozen > 0) { e.frozen--; continue; }
@@ -193,13 +189,15 @@ function update() {
             e.x = wrap(e.x + Math.cos(ang + zigzag) * e.spd * spdMult, MAP_W);
             e.y = wrap(e.y + Math.sin(ang + zigzag) * e.spd * spdMult, MAP_H);
         }
-        if (d < player.r + e.r) takeDamage(e.boss ? 0.65 : 0.45, e.n);
+        if (d < player.r + e.r) takeDamage(e.boss ? baseBoss : baseMelee, e.n);
     }
 
+    // Ranged bullet damage scales with level
+    const bulletDmg = 8 + Math.floor(player.lvl * 1.0);
     for (let i = eBullets.length - 1; i >= 0; i--) {
         const b = eBullets[i];
         b.x = wrap(b.x + b.vx, MAP_W); b.y = wrap(b.y + b.vy, MAP_H); b.life--;
-        if (wdist(b.x, b.y, player.x, player.y) < player.r) { takeDamage(14, b.owner || 'Düşman'); eBullets.splice(i, 1); }
+        if (wdist(b.x, b.y, player.x, player.y) < player.r) { takeDamage(bulletDmg, b.owner || 'Düşman'); eBullets.splice(i, 1); }
         else if (b.life <= 0) eBullets.splice(i, 1);
     }
 
@@ -221,6 +219,10 @@ function update() {
             if (player.xp >= player.nextXp) levelUp();
         }
     }
+
+    // Performance: cap arrays to avoid unbounded growth
+    if (parts.length  > 250) parts.length  = 250;
+    if (floats.length > 40)  floats.length = 40;
 
     updateHUD();
 }
