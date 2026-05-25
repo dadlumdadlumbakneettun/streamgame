@@ -28,8 +28,8 @@ function safeDraw(drawFn, name) {
 function draw() {
     if (typeof CTX === 'undefined' || !CTX) return;
 
-    // Derin ve piksellenmiş orman tabanı arka plan rengi
-    CTX.fillStyle = '#050c05';
+    // Derin ve piksellenmiş orman tabanı arka plan rengi (Daha taze bir çimen tonuyla güncellendi)
+    CTX.fillStyle = '#0a1a0c';
     CTX.fillRect(0, 0, W, H);
     
     // zoomLevel değerinin tanımsız, 0 veya negatif olma ihtimaline karşı güvenlik bariyeri
@@ -43,11 +43,10 @@ function draw() {
         const VW = W / safeZoom, VH = H / safeZoom;
         const HVW = VW / 2 + 80, HVH = VH / 2 + 80; // Görüş alanı dışı eleme marjı
 
-        // KATMANLI GÜVENLİ ÇİZİM SIRASI
+        // KATMANLI GÜVENLİ ÇİZİM SIRASI (Landmarks ve Grid Çizgileri kaldırıldı!)
         safeDraw(() => drawTerrain(VW, VH, HVW, HVH), "Zemin Bölgeleri");
-        safeDraw(() => drawGrid(VW, VH), "Piksel Izgara");
+        safeDraw(() => drawNaturalGrass(VW, VH), "Organik Pixel Çimen ve Çiçek Örtüsü");
         safeDraw(() => drawRoads(VW, VH), "Yollar");
-        safeDraw(() => drawLandmarks(HVW, HVH), "İşaret Noktaları");
         safeDraw(() => drawRocks(HVW, HVH), "Kayalar");
         safeDraw(() => drawTrees(HVW, HVH), "Ağaçlar");
         safeDraw(() => drawCampfires(HVW, HVH), "Kamp Ateşleri");
@@ -71,12 +70,12 @@ function draw() {
     safeDraw(() => drawMinimap(), "Mini Harita");
 }
 
-// Detaylı pixel art arazi renk paletleri
+// Detaylı pixel art arazi renk paletleri (Orman ve yeşillik dokuları geliştirildi)
 const terrainColors = {
     water:  { main: '#004c8c', light: '#0073b3', dark: '#00264d', accent: '#33ccff' },
     sand:   { main: '#bfa15f', light: '#d9c58c', dark: '#8c6b30', accent: '#f2e5b1' },
     ruins:  { main: '#424d3b', light: '#5e6b54', dark: '#2b3325', accent: '#7c8c70' },
-    forest: { main: '#133a13', light: '#1d541d', dark: '#0b240b', accent: '#2e7a2e' },
+    forest: { main: '#163f16', light: '#225e22', dark: '#0c240c', accent: '#328a32' },
     lava:   { main: '#a82000', light: '#e04c00', dark: '#610a00', accent: '#ffb300' },
     snow:   { main: '#c6d9d9', light: '#e8f2f2', dark: '#98b3b3', accent: '#ffffff' },
     swamp:  { main: '#1c2e15', light: '#2c4721', dark: '#0e1a0a', accent: '#3e632e' }
@@ -202,88 +201,94 @@ function drawRoads(VW, VH) {
     });
 }
 
-// Zemin piksellenmiş ızgara ve yosun dokusu çizimi
-function drawGrid(VW, VH) {
+// Yeni Geliştirilen Organik Pixel-Art Çimen, Yonca ve Yabani Çiçek Örtüsü
+function drawNaturalGrass(VW, VH) {
     const safeVW = Math.min(VW, 3000);
     const safeVH = Math.min(VH, 3000);
 
     CTX.save();
     
-    const gs = 80; 
-    const ox = player.x % gs, oy = player.y % gs;
+    // Tiling/Izgara hücresi mantığında çalışır ancak çizgiler çizmez, sadece içerisine organik bitki çizimleri yerleştirir
+    const cellSize = 64; 
+    const ox = player.x % cellSize;
+    const oy = player.y % cellSize;
     
-    CTX.strokeStyle = '#10240d'; 
-    CTX.lineWidth = 2;
-    CTX.setLineDash([4, 12]); 
-    
-    CTX.beginPath();
-    for (let x = -safeVW / 2 - gs; x < safeVW / 2 + gs; x += gs) {
-        const dx = Math.floor((x - ox) / gs) * gs + (gs - ox);
-        CTX.moveTo(dx, -safeVH / 2); CTX.lineTo(dx, safeVH / 2);
-    }
-    for (let y = -safeVH / 2 - gs; y < safeVH / 2 + gs; y += gs) {
-        const dy = Math.floor((y - oy) / gs) * gs + (gs - oy);
-        CTX.moveTo(-safeVW / 2, dy); CTX.lineTo(safeVW / 2, dy); 
-    }
-    CTX.stroke();
-    
-    CTX.fillStyle = '#173614';
-    for (let x = -safeVW / 2 - gs; x < safeVW / 2 + gs; x += gs) {
-        const dx = Math.floor((x - ox) / gs) * gs + (gs - ox);
-        for (let y = -safeVH / 2 - gs; y < safeVH / 2 + gs; y += gs) {
-            const dy = Math.floor((y - oy) / gs) * gs + (gs - oy);
+    for (let x = -safeVW / 2 - cellSize; x < safeVW / 2 + cellSize; x += cellSize) {
+        const dx = Math.floor((x - ox) / cellSize) * cellSize + (cellSize - ox);
+        
+        for (let y = -safeVH / 2 - cellSize; y < safeVH / 2 + cellSize; y += cellSize) {
+            const dy = Math.floor((y - oy) / cellSize) * cellSize + (cellSize - oy);
             
-            const hash = Math.abs(Math.sin(dx * 12.9898 + dy * 78.233)) * 43758.5453;
-            if (hash % 10 > 7) {
-                CTX.fillRect(dx + (hash % 20) - 10, dy + ((hash >> 2) % 20) - 10, 4, 4);
-                CTX.fillRect(dx + (hash % 20) - 6, dy + ((hash >> 2) % 20) - 8, 4, 2);
+            // Ekran dışındaysa çizmeyi atla (Performans culling)
+            if (Math.abs(dx) > safeVW / 2 + 50 || Math.abs(dy) > safeVH / 2 + 50) continue;
+            
+            // Sabit ve deterministik rastgelelik üretimi (Tohum / Seed hashing)
+            const seed = Math.abs(Math.sin(dx * 12.9898 + dy * 78.233)) * 43758.5453;
+            const itemType = Math.floor(seed) % 15; 
+            
+            // Konumda hafif pikselsel doğallık için ofset ekleme
+            const px = dx + Math.floor((seed % 10) * 2) - 10;
+            const py = dy + Math.floor(((seed >> 2) % 10) * 2) - 10;
+            
+            if (itemType === 0 || itemType === 1) {
+                // 1. Tip: Klasik Piksel Çimen Demeti (3 dal yeşil yaprak)
+                CTX.fillStyle = '#1e4c1e'; // Koyu yeşil
+                CTX.fillRect(px, py - 4, 2, 8);
+                CTX.fillRect(px - 2, py - 1, 2, 5);
+                CTX.fillRect(px + 2, py - 2, 2, 6);
+                
+                CTX.fillStyle = '#307530'; // Işıklı yeşil üst kısımlar
+                CTX.fillRect(px, py - 6, 2, 2);
+                CTX.fillRect(px - 2, py - 3, 2, 2);
+                CTX.fillRect(px + 2, py - 4, 2, 2);
+                
+            } else if (itemType === 2) {
+                // 2. Tip: Üç Yapraklı Yonca (Clover)
+                CTX.fillStyle = '#225a22';
+                CTX.fillRect(px - 2, py - 2, 2, 2);
+                CTX.fillRect(px + 1, py - 2, 2, 2);
+                CTX.fillRect(px - 1, py + 1, 3, 2);
+                CTX.fillStyle = '#489648'; // Parlak yaprak ucu
+                CTX.fillRect(px - 1, py - 1, 1, 1);
+                CTX.fillRect(px + 1, py - 1, 1, 1);
+                CTX.fillRect(px, py, 1, 1);
+                
+            } else if (itemType === 3) {
+                // 3. Tip: Minik Yabani Mavi Çiçekler
+                CTX.fillStyle = '#143814'; // Çiçeğin ot tabanı
+                CTX.fillRect(px - 2, py, 5, 3);
+                CTX.fillRect(px, py - 2, 1, 4);
+                
+                CTX.fillStyle = '#33ccff'; // Mavi taç yapraklar
+                CTX.fillRect(px - 2, py - 4, 2, 2);
+                CTX.fillRect(px + 1, py - 4, 2, 2);
+                CTX.fillRect(px - 1, py - 6, 3, 2);
+                CTX.fillStyle = '#ffffff'; // Beyaz çiçek merkezi
+                CTX.fillRect(px, py - 4, 1, 1);
+                
+            } else if (itemType === 4) {
+                // 4. Tip: Minik Yabani Sarı Çiçek
+                CTX.fillStyle = '#113311';
+                CTX.fillRect(px - 1, py - 1, 3, 4);
+                
+                CTX.fillStyle = '#ffd700'; // Altın sarısı çiçek yaprağı
+                CTX.fillRect(px - 2, py - 3, 5, 2);
+                CTX.fillRect(px - 1, py - 4, 3, 1);
+                CTX.fillStyle = '#ffffff'; // Merkez
+                CTX.fillRect(px, py - 3, 1, 1);
+                
+            } else if (itemType === 5) {
+                // 5. Tip: Nemli Yosun Taşları (Minik dairesel gri taş öbekleri)
+                CTX.fillStyle = '#3d453d';
+                CTX.fillRect(px - 3, py + 1, 6, 3);
+                CTX.fillRect(px - 1, py - 1, 3, 2);
+                CTX.fillStyle = '#1a331a'; // Taşın üstüne binen yosun pikselleri
+                CTX.fillRect(px - 2, py, 4, 1);
             }
         }
     }
     
     CTX.restore();
-}
-
-// Landmark (İşaret noktaları) - Gizemli pixel rün dairesi şeklinde
-function drawLandmarks(HVW, HVH) {
-    if (typeof landmarks === 'undefined' || !landmarks) return;
-
-    const safeHVW = Math.min(HVW, 2000);
-    const safeHVH = Math.min(HVH, 2000);
-
-    landmarks.forEach(lm => {
-        if (!lm || lm.r <= 0) return;
-        const pos = relPos(lm.x, lm.y);
-        if (Math.abs(pos.x) > safeHVW || Math.abs(pos.y) > safeHVH) return;
-        
-        CTX.save();
-        CTX.strokeStyle = '#a484ff';
-        CTX.lineWidth = 2;
-        CTX.setLineDash([6, 10, 2, 8]);
-        CTX.beginPath();
-        CTX.arc(pos.x, pos.y, Math.abs(lm.r), 0, Math.PI * 2);
-        CTX.stroke();
-
-        CTX.fillStyle = 'rgba(164, 132, 255, 0.05)';
-        CTX.beginPath();
-        CTX.arc(pos.x, pos.y, Math.abs(lm.r), 0, Math.PI * 2);
-        CTX.fill();
-
-        CTX.fillStyle = '#4b3d61';
-        CTX.fillRect(pos.x - 12, pos.y - 12, 24, 24);
-        CTX.fillStyle = '#7a649e';
-        CTX.fillRect(pos.x - 10, pos.y - 10, 20, 6); 
-        CTX.fillStyle = '#2a2238';
-        CTX.fillRect(pos.x - 12, pos.y + 8, 24, 4);  
-        
-        CTX.globalAlpha = 0.8;
-        CTX.fillStyle = '#ffffff';
-        CTX.font = "bold 11px 'Courier New', monospace";
-        CTX.textAlign = 'center';
-        const lmName = lm.name ? lm.name.toUpperCase() : "LANDMARK";
-        CTX.fillText(`.: ${lmName} :.`, pos.x, pos.y - lm.r - 10);
-        CTX.restore();
-    });
 }
 
 // Kayaları gölgeli ve köşeli pixel art tarzında çiz
@@ -594,7 +599,7 @@ function drawItems(HVW, HVH) {
             CTX.fillStyle = '#ff3333';
             CTX.fillRect(pos.x - 5, pos.y - 4, 4, 3);
             CTX.fillRect(pos.x + 1, pos.y - 4, 4, 3);
-            CTX.fillRect(pos.x - 6, pos.y - 1, 12, 3);
+            CTX.fillRect(pos.x - 6, py - 1, 12, 3); // Düzeltilmiş koordinat güvencesi
             CTX.fillRect(pos.x - 4, pos.y + 2, 8, 3);
             CTX.fillRect(pos.x - 2, pos.y + 5, 4, 2);
             CTX.fillStyle = '#ffffff';
@@ -672,7 +677,6 @@ function drawEnemies(HVW, HVH) {
         CTX.fillStyle = 'rgba(0, 0, 0, 0.45)';
         CTX.beginPath();
         
-        // Negatif yarıçap hatasına karşı ellipse koruması
         const rx = ER * 0.8;
         const ry = ER * 0.3;
         if (rx > 0 && ry > 0) {
@@ -763,7 +767,6 @@ function drawEnemies(HVW, HVH) {
         CTX.fillStyle = '#140505';
         CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw, 4);
         
-        // can oranı tavan limitleri sıfırlama güvenliği
         let pct = (typeof e.hp !== 'undefined' && typeof e.max !== 'undefined' && e.max > 0) ? (e.hp / e.max) : 1.0;
         if (isNaN(pct) || !isFinite(pct)) pct = 0;
         pct = Math.max(0, Math.min(1, pct));
