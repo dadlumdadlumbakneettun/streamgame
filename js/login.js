@@ -120,60 +120,81 @@ async function loadSuggestedStreamers() {
 
     for (const username of popularStreamers) {
         const itemEl = document.createElement('div');
-        itemEl.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #1a1c20; border: 1px solid #2a2d32; border-radius: 8px; cursor: pointer; transition: background 0.2s, transform 0.1s;";
-        itemEl.onmouseover = () => { itemEl.style.background = '#252930'; itemEl.style.transform = 'scale(1.03)'; };
-        itemEl.onmouseout = () => { itemEl.style.background = '#1a1c20'; itemEl.style.transform = 'scale(1)'; };
+        itemEl.style.cssText = "display: flex; flex-direction: row; gap: 15px; align-items: center; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 2px; cursor: pointer; transition: all 0.2s; min-height: 82px; box-sizing: border-box;";
+        
+        itemEl.onmouseover = () => { 
+            itemEl.style.background = 'rgba(255,255,255,0.07)'; 
+            itemEl.style.borderColor = 'rgba(255,255,255,0.15)';
+            itemEl.style.transform = 'translateX(-5px)'; 
+        };
+        itemEl.onmouseout = () => { 
+            itemEl.style.background = 'rgba(255,255,255,0.03)'; 
+            itemEl.style.borderColor = 'rgba(255,255,255,0.08)';
+            itemEl.style.transform = 'translateX(0)'; 
+        };
         
         itemEl.onclick = () => {
             document.getElementById('streamer-input').value = username;
             doLogin();
         };
 
+        const imgEl = document.createElement('img');
+        imgEl.style.cssText = "width: 52px; height: 52px; border-radius: 2px; background: #222; object-fit: cover; flex-shrink: 0;";
+        imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='52' height='52'><rect width='52' height='52' fill='%23222'/></svg>";
+        itemEl.appendChild(imgEl);
+
+        const contentWrap = document.createElement('div');
+        contentWrap.style.cssText = "display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; height: 52px; box-sizing: border-box;";
+
+        const topRow = document.createElement('div');
+        topRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; width: 100%;";
+
         const nameSpan = document.createElement('span');
         nameSpan.innerText = username;
-        nameSpan.style.cssText = "font-weight: bold; color: #fff; font-size: 14px;";
-        itemEl.appendChild(nameSpan);
+        nameSpan.style.cssText = "font-weight: bold; color: #fff; font-size: 16px;";
+        topRow.appendChild(nameSpan);
 
-        const statusWrap = document.createElement('div');
-        statusWrap.style.cssText = "display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-size: 11px;";
+        const viewersSpan = document.createElement('span');
+        viewersSpan.innerText = "";
+        viewersSpan.style.cssText = "font-size: 13px; color: #53fc18; font-weight: bold;";
+        topRow.appendChild(viewersSpan);
 
-        try {
-            const res = await fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(username)}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.livestream) {
-                    const liveBadge = document.createElement('span');
-                    liveBadge.innerText = '🔴 CANLI';
-                    liveBadge.style.cssText = "color: #ff4d4d; font-weight: bold; background: rgba(255,77,77,0.15); padding: 2px 6px; border-radius: 4px; font-size: 10px; letter-spacing: 0.5px;";
-                    
-                    const viewersSpan = document.createElement('span');
-                    const viewerCount = data.livestream.viewer_count || data.livestream.viewers || 0;
-                    viewersSpan.innerText = viewerCount.toLocaleString() + ' izleyici';
-                    viewersSpan.style.color = '#53fc18';
+        contentWrap.appendChild(topRow);
 
-                    statusWrap.appendChild(liveBadge);
-                    statusWrap.appendChild(viewersSpan);
-                } else {
-                    const offlineSpan = document.createElement('span');
-                    offlineSpan.innerText = 'Çevrimdışı';
-                    offlineSpan.style.color = '#555';
-                    statusWrap.appendChild(offlineSpan);
-                }
-            } else {
-                const errSpan = document.createElement('span');
-                errSpan.innerText = 'Yüklenemedi';
-                errSpan.style.color = '#444';
-                statusWrap.appendChild(errSpan);
-            }
-        } catch (e) {
-            const errSpan = document.createElement('span');
-            errSpan.innerText = 'Hata';
-            errSpan.style.color = '#444';
-            statusWrap.appendChild(errSpan);
-        }
+        const bottomRow = document.createElement('div');
+        bottomRow.style.cssText = "display: flex; justify-content: flex-start; align-items: center; width: 100%;";
 
-        itemEl.appendChild(statusWrap);
+        const statusSpan = document.createElement('span');
+        statusSpan.innerText = "Yükleniyor...";
+        statusSpan.style.cssText = "font-size: 11px; color: #555; font-weight: bold;";
+        bottomRow.appendChild(statusSpan);
+
+        contentWrap.appendChild(bottomRow);
+        itemEl.appendChild(contentWrap);
         listEl.appendChild(itemEl);
+
+        fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(username)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.user && data.user.profile_pic) {
+                    imgEl.src = data.user.profile_pic;
+                }
+                if (data.livestream) {
+                    statusSpan.innerText = "CANLI";
+                    statusSpan.style.color = "#53fc18";
+                    const viewerCount = data.livestream.viewer_count || data.livestream.viewers || 0;
+                    viewersSpan.innerText = viewerCount.toLocaleString() + " izleyici";
+                    viewersSpan.style.color = "#53fc18";
+                } else {
+                    statusSpan.innerText = "OFFLINE";
+                    statusSpan.style.color = "#777";
+                    viewersSpan.innerText = "";
+                }
+            })
+            .catch(() => {
+                statusSpan.innerText = "Hata";
+                statusSpan.style.color = "#555";
+            });
     }
 }
 
