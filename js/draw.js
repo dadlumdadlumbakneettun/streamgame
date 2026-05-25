@@ -1,4 +1,4 @@
-function draw() {
+zfunction draw() {
     CTX.fillStyle = '#0b160b';
     CTX.fillRect(0, 0, W, H);
     CTX.save();
