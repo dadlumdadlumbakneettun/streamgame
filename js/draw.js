@@ -6,18 +6,19 @@ function draw() {
         CTX.translate(W / 2, H / 2);
         CTX.scale(zoomLevel, zoomLevel);
         const VW = W / zoomLevel, VH = H / zoomLevel;
+        const HVW = VW / 2 + 80, HVH = VH / 2 + 80; // half-viewport + margin for culling
 
-        drawTerrain(VW, VH);
+        drawTerrain(VW, VH, HVW, HVH);
         drawRoads(VW, VH);
         drawGrid(VW, VH);
-        drawLandmarks(VW, VH);
-        drawRocks(VW, VH);
-        drawTrees(VW, VH);
-        drawCampfires(VW, VH);
-        drawProps(VW, VH);
-        drawItems(VW, VH);
+        drawLandmarks(HVW, HVH);
+        drawRocks(HVW, HVH);
+        drawTrees(HVW, HVH);
+        drawCampfires(HVW, HVH);
+        drawProps(HVW, HVH);
+        drawItems(HVW, HVH);
         drawEnemyBullets(VW, VH);
-        drawEnemies(VW, VH);
+        drawEnemies(HVW, HVH);
         drawGarlicZone();
         drawShieldRing();
         drawOrbs();
@@ -39,10 +40,10 @@ const terrainColors = {
     swamp: 'rgba(30,60,10,0.25)'
 };
 
-function drawTerrain(VW, VH) {
+function drawTerrain(VW, VH, HVW, HVH) {
     terrainZones.forEach(z => {
         const pos = relPos(z.x, z.y);
-        if (Math.abs(pos.x) > VW / 2 + z.r || Math.abs(pos.y) > VH / 2 + z.r) return;
+        if (Math.abs(pos.x) > HVW + z.r || Math.abs(pos.y) > HVH + z.r) return;
         const grad = CTX.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, z.r);
         grad.addColorStop(0, terrainColors[z.type] || 'rgba(50,50,50,0.15)');
         grad.addColorStop(1, 'transparent');
@@ -84,15 +85,15 @@ function drawGrid(VW, VH) {
     }
     for (let y = -VH / 2 - gs; y < VH / 2 + gs; y += gs) {
         const dy = Math.floor((y - oy) / gs) * gs + (gs - oy);
-        CTX.moveTo(-VW / 2, dy); CTX.lineTo(VW / 2, dy);
+        CTX.moveTo(-VH / 2, dy); CTX.lineTo(VH / 2, dy);
     }
     CTX.stroke();
 }
 
-function drawLandmarks(VW, VH) {
+function drawLandmarks(HVW, HVH) {
     landmarks.forEach(lm => {
         const pos = relPos(lm.x, lm.y);
-        if (Math.abs(pos.x) > VW || Math.abs(pos.y) > VH) return;
+        if (Math.abs(pos.x) > HVW || Math.abs(pos.y) > HVH) return;
         CTX.save(); CTX.globalAlpha = 0.15; CTX.strokeStyle = '#fff'; CTX.lineWidth = 1; CTX.setLineDash([5, 8]);
         CTX.beginPath(); CTX.arc(pos.x, pos.y, lm.r, 0, 6.28); CTX.stroke(); CTX.setLineDash([]);
         CTX.globalAlpha = 0.2; CTX.fillStyle = '#fff'; CTX.font = 'bold 13px monospace'; CTX.textAlign = 'center';
@@ -100,10 +101,10 @@ function drawLandmarks(VW, VH) {
     });
 }
 
-function drawRocks(VW, VH) {
+function drawRocks(HVW, HVH) {
     rocks.forEach(r => {
         const pos = relPos(r.x, r.y);
-        if (Math.abs(pos.x) > VW || Math.abs(pos.y) > VH) return;
+        if (Math.abs(pos.x) > HVW || Math.abs(pos.y) > HVH) return;
         CTX.save(); CTX.fillStyle = r.c;
         CTX.beginPath(); CTX.ellipse(pos.x, pos.y, r.r * 1.3, r.r * 0.75, 0.4, 0, 6.28); CTX.fill();
         CTX.fillStyle = 'rgba(255,255,255,0.06)';
@@ -112,10 +113,10 @@ function drawRocks(VW, VH) {
     });
 }
 
-function drawTrees(VW, VH) {
+function drawTrees(HVW, HVH) {
     trees.forEach(t => {
         const pos = relPos(t.x, t.y);
-        if (Math.abs(pos.x) > VW || Math.abs(pos.y) > VH) return;
+        if (Math.abs(pos.x) > HVW || Math.abs(pos.y) > HVH) return;
         CTX.save(); CTX.globalAlpha = 0.18; CTX.fillStyle = '#000';
         CTX.beginPath(); CTX.ellipse(pos.x + 8, pos.y + t.r * 0.45, t.r * 0.72, t.r * 0.22, 0, 0, 6.28); CTX.fill(); CTX.restore();
         CTX.fillStyle = '#4a2e10'; CTX.fillRect(pos.x - 4, pos.y, 8, t.r * 0.5);
@@ -126,24 +127,28 @@ function drawTrees(VW, VH) {
     });
 }
 
-function drawCampfires(VW, VH) {
+function drawCampfires(HVW, HVH) {
     campfires.forEach(c => {
         const pos = relPos(c.x, c.y);
-        if (Math.abs(pos.x) > VW || Math.abs(pos.y) > VH) return;
+        if (Math.abs(pos.x) > HVW || Math.abs(pos.y) > HVH) return;
         c.t++; const flicker = Math.sin(c.t * 0.28) * 4;
         CTX.save();
         CTX.globalAlpha = 0.06 + Math.abs(flicker) * 0.008; CTX.fillStyle = '#ff6600';
         CTX.beginPath(); CTX.arc(pos.x, pos.y, 70, 0, 6.28); CTX.fill();
-        CTX.globalAlpha = 1; CTX.shadowBlur = 18 + flicker; CTX.shadowColor = '#ff6600';
+        CTX.globalAlpha = 1;
+        // shadowBlur only for close campfires
+        if (Math.abs(pos.x) < 200 && Math.abs(pos.y) < 200) {
+            CTX.shadowBlur = 18 + flicker; CTX.shadowColor = '#ff6600';
+        }
         CTX.fillStyle = `hsl(${28 + flicker * 2},100%,${55 + flicker}%)`;
         CTX.beginPath(); CTX.arc(pos.x, pos.y, 4 + Math.abs(flicker) * 0.4, 0, 6.28); CTX.fill(); CTX.restore();
     });
 }
 
-function drawProps(VW, VH) {
+function drawProps(HVW, HVH) {
     props.forEach(p => {
         const pos = relPos(p.x, p.y);
-        if (Math.abs(pos.x) > VW || Math.abs(pos.y) > VH) return;
+        if (Math.abs(pos.x) > HVW || Math.abs(pos.y) > HVH) return;
         if (p.type === 'barrel') {
             CTX.fillStyle = '#6b3500';
             CTX.beginPath(); CTX.ellipse(pos.x, pos.y, 13, 17, 0, 0, 6.28); CTX.fill();
@@ -160,20 +165,23 @@ function drawProps(VW, VH) {
     });
 }
 
-function drawItems(VW, VH) {
-    const cmap = { xp:'#00bfff', xp_big:'#00ffff', hp:'#f55', mag:'#ffff00', shield:'#00ffff' };
+// Item colour map — defined once, not recreated every frame
+const ITEM_CMAP = { xp:'#00bfff', xp_big:'#00ffff', hp:'#f55', mag:'#ffff00', shield:'#00ffff' };
+
+function drawItems(HVW, HVH) {
     items.forEach(it => {
         const pos = relPos(it.x, it.y);
-        if (Math.abs(pos.x) > VW || Math.abs(pos.y) > VH) return;
-        const bob = Math.sin(frame * 0.1 + it.x * 0.01) * 3;
-        CTX.save();
-        CTX.shadowBlur = 16; CTX.shadowColor = cmap[it.t] || '#fff'; CTX.fillStyle = cmap[it.t] || '#fff';
+        if (Math.abs(pos.x) > HVW || Math.abs(pos.y) > HVH) return;
+        const col = ITEM_CMAP[it.t] || '#fff';
+        CTX.fillStyle = col;
         if (it.t.includes('xp')) {
-            CTX.translate(pos.x, pos.y + bob); CTX.rotate(Math.PI / 4); CTX.fillRect(-5, -5, 10, 10);
+            CTX.save();
+            CTX.translate(pos.x, pos.y); CTX.rotate(Math.PI / 4);
+            CTX.fillRect(-5, -5, 10, 10);
+            CTX.restore();
         } else {
-            CTX.beginPath(); CTX.arc(pos.x, pos.y + bob, 8, 0, 6.28); CTX.fill();
+            CTX.beginPath(); CTX.arc(pos.x, pos.y, 8, 0, 6.28); CTX.fill();
         }
-        CTX.restore();
     });
 }
 
@@ -188,15 +196,15 @@ function drawEnemyBullets(VW, VH) {
     CTX.restore();
 }
 
-function drawEnemies(VW, VH) {
+function drawEnemies(HVW, HVH) {
     enemies.forEach(e => {
         const pos = relPos(e.x, e.y);
-        if (Math.abs(pos.x) > VW || Math.abs(pos.y) > VH) return;
+        if (Math.abs(pos.x) > HVW || Math.abs(pos.y) > HVH) return;
         const ER = e.r * charScale;
         CTX.save();
         if (e.frozen > 0)      { CTX.shadowBlur = 20; CTX.shadowColor = '#00ffff'; }
-        else if (e.slowed > 0) { CTX.shadowBlur = 10; CTX.shadowColor = '#0066ff'; }
         else if (e.boss)       { CTX.shadowBlur = 30 + Math.sin(frame * 0.08) * 12; CTX.shadowColor = '#f00'; }
+        // slowed: removed glow (was causing lag appearance)
 
         const img = e.range ? imgRanged : imgMelee;
         try {
@@ -208,6 +216,7 @@ function drawEnemies(VW, VH) {
         if (e.boss) { CTX.globalAlpha = 1; CTX.strokeStyle = '#ffd700'; CTX.lineWidth = 4; CTX.beginPath(); CTX.arc(pos.x, pos.y, ER + 4, 0, 6.28); CTX.stroke(); }
         CTX.restore();
 
+        // name + hp bar in one save/restore
         CTX.save();
         CTX.font = `bold ${e.boss ? 15 : 13}px 'Courier New', monospace`;
         CTX.textAlign = 'center';
@@ -215,15 +224,15 @@ function drawEnemies(VW, VH) {
         CTX.fillStyle = 'rgba(0,0,0,0.75)';
         CTX.fillRect(pos.x - tw / 2 - 5, pos.y - ER - 26, tw + 10, 18);
         CTX.fillStyle = e.boss ? '#ffd700' : '#fff';
-        CTX.shadowColor = e.boss ? '#ffd700' : e.c; CTX.shadowBlur = 6;
+        if (e.boss) { CTX.shadowColor = '#ffd700'; CTX.shadowBlur = 6; }
         CTX.fillText(e.n, pos.x, pos.y - ER - 12);
-        CTX.restore();
 
         const bw = ER * 2;
-        CTX.fillStyle = '#200'; CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw, 6);
+        CTX.shadowBlur = 0; CTX.fillStyle = '#200'; CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw, 6);
         const pct = e.hp / e.max;
         CTX.fillStyle = e.boss ? `hsl(${pct * 30},100%,50%)` : (pct > 0.5 ? '#0f0' : '#f50');
         CTX.fillRect(pos.x - ER, pos.y - ER - 8, bw * pct, 6);
+        CTX.restore();
     });
 }
 
@@ -248,12 +257,13 @@ function drawShieldRing() {
 
 function drawOrbs() {
     if (!player.orb) return;
+    CTX.save(); CTX.shadowBlur = 15; CTX.shadowColor = '#d0f'; CTX.fillStyle = '#d0f';
     for (let i = 0; i < player.orb; i++) {
         const a = orbAng + (Math.PI * 2 / player.orb) * i;
         const ox = Math.cos(a) * player.orbRange, oy = Math.sin(a) * player.orbRange;
-        CTX.save(); CTX.shadowBlur = 15; CTX.shadowColor = '#d0f'; CTX.fillStyle = '#d0f';
-        CTX.beginPath(); CTX.arc(ox, oy, 10 * charScale, 0, 6.28); CTX.fill(); CTX.restore();
+        CTX.beginPath(); CTX.arc(ox, oy, 10 * charScale, 0, 6.28); CTX.fill();
     }
+    CTX.restore();
 }
 
 function drawDashBar() {
@@ -289,7 +299,7 @@ function drawPlayer() {
         } catch (e) {
             avatarCanvas.width = 0;
         } finally {
-            CTX.restore(); 
+            CTX.restore();
         }
     }
 
@@ -326,14 +336,16 @@ function drawParticles() {
 }
 
 function drawFloats() {
+    CTX.save();
+    CTX.font = 'bold 22px monospace'; CTX.textAlign = 'center';
     floats.forEach(f => {
         const pos = relPos(f.x, f.y);
-        CTX.save(); CTX.globalAlpha = Math.max(0, f.l / 50); CTX.fillStyle = f.c;
-        CTX.font = 'bold 22px monospace'; CTX.textAlign = 'center';
-        CTX.shadowBlur = 8; CTX.shadowColor = f.c;
-        CTX.fillText(f.t, pos.x, pos.y); CTX.restore();
+        CTX.globalAlpha = Math.max(0, f.l / 50);
+        CTX.fillStyle = f.c;
+        CTX.fillText(f.t, pos.x, pos.y);
         f.y -= 0.7; f.l--;
     });
+    CTX.restore();
     floats = floats.filter(f => f.l > 0);
 }
 
