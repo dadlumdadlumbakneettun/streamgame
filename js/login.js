@@ -111,28 +111,39 @@ function createMenuParticles() {
     }
 }
 
-const popularStreamers = ['atlassya', 'rraenee', 'caglasen', 'cordiseps'];
+const popularStreamers = ['atlassya', 'rraenee', 'caglasen', 'cordiseps', 'jahrein', 'nazody'];
 
 async function loadSuggestedStreamers() {
     const listEl = document.getElementById('streamers-list');
     if (!listEl) return;
     listEl.innerHTML = '';
 
-    for (const username of popularStreamers) {
+    const fetches = popularStreamers.map(username =>
+        fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(username)}`)
+            .then(res => res.json())
+            .then(data => ({ username, data }))
+            .catch(() => ({ username, data: null }))
+    );
+
+    const results = await Promise.all(fetches);
+
+    for (const { username, data } of results) {
+        if (!data || !data.livestream) continue;
+
         const itemEl = document.createElement('div');
         itemEl.style.cssText = "display: flex; flex-direction: row; gap: 15px; align-items: center; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 2px; cursor: pointer; transition: all 0.2s; min-height: 82px; box-sizing: border-box;";
-        
-        itemEl.onmouseover = () => { 
-            itemEl.style.background = 'rgba(255,255,255,0.07)'; 
+
+        itemEl.onmouseover = () => {
+            itemEl.style.background = 'rgba(255,255,255,0.07)';
             itemEl.style.borderColor = 'rgba(255,255,255,0.15)';
-            itemEl.style.transform = 'translateX(-5px)'; 
+            itemEl.style.transform = 'translateX(-5px)';
         };
-        itemEl.onmouseout = () => { 
-            itemEl.style.background = 'rgba(255,255,255,0.03)'; 
+        itemEl.onmouseout = () => {
+            itemEl.style.background = 'rgba(255,255,255,0.03)';
             itemEl.style.borderColor = 'rgba(255,255,255,0.08)';
-            itemEl.style.transform = 'translateX(0)'; 
+            itemEl.style.transform = 'translateX(0)';
         };
-        
+
         itemEl.onclick = () => {
             document.getElementById('streamer-input').value = username;
             doLogin();
@@ -140,7 +151,11 @@ async function loadSuggestedStreamers() {
 
         const imgEl = document.createElement('img');
         imgEl.style.cssText = "width: 52px; height: 52px; border-radius: 2px; background: #222; object-fit: cover; flex-shrink: 0;";
-        imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='52' height='52'><rect width='52' height='52' fill='%23222'/></svg>";
+        if (data.user && data.user.profile_pic) {
+            imgEl.src = data.user.profile_pic;
+        } else {
+            imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='52' height='52'><rect width='52' height='52' fill='%23222'/></svg>";
+        }
         itemEl.appendChild(imgEl);
 
         const contentWrap = document.createElement('div');
@@ -150,12 +165,13 @@ async function loadSuggestedStreamers() {
         topRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; width: 100%;";
 
         const nameSpan = document.createElement('span');
-        nameSpan.innerText = username;
+        nameSpan.innerText = data.user?.username || username;
         nameSpan.style.cssText = "font-weight: bold; color: #fff; font-size: 16px;";
         topRow.appendChild(nameSpan);
 
         const viewersSpan = document.createElement('span');
-        viewersSpan.innerText = "";
+        const viewerCount = data.livestream.viewer_count || data.livestream.viewers || 0;
+        viewersSpan.innerText = viewerCount.toLocaleString() + " izleyici";
         viewersSpan.style.cssText = "font-size: 13px; color: #53fc18; font-weight: bold;";
         topRow.appendChild(viewersSpan);
 
@@ -165,36 +181,13 @@ async function loadSuggestedStreamers() {
         bottomRow.style.cssText = "display: flex; justify-content: flex-start; align-items: center; width: 100%;";
 
         const statusSpan = document.createElement('span');
-        statusSpan.innerText = "Yükleniyor...";
-        statusSpan.style.cssText = "font-size: 11px; color: #555; font-weight: bold;";
+        statusSpan.innerText = "CANLI";
+        statusSpan.style.cssText = "font-size: 11px; color: #53fc18; font-weight: bold;";
         bottomRow.appendChild(statusSpan);
 
         contentWrap.appendChild(bottomRow);
         itemEl.appendChild(contentWrap);
         listEl.appendChild(itemEl);
-
-        fetch(`https://kick.com/api/v2/channels/${encodeURIComponent(username)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.user && data.user.profile_pic) {
-                    imgEl.src = data.user.profile_pic;
-                }
-                if (data.livestream) {
-                    statusSpan.innerText = "CANLI";
-                    statusSpan.style.color = "#53fc18";
-                    const viewerCount = data.livestream.viewer_count || data.livestream.viewers || 0;
-                    viewersSpan.innerText = viewerCount.toLocaleString() + " izleyici";
-                    viewersSpan.style.color = "#53fc18";
-                } else {
-                    statusSpan.innerText = "OFFLINE";
-                    statusSpan.style.color = "#777";
-                    viewersSpan.innerText = "";
-                }
-            })
-            .catch(() => {
-                statusSpan.innerText = "Hata";
-                statusSpan.style.color = "#555";
-            });
     }
 }
 
